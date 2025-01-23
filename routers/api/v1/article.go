@@ -2,6 +2,7 @@ package v1
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/boombuler/barcode/qr"
 	"github.com/gin-gonic/gin"
@@ -24,13 +25,13 @@ import (
 // @Router /api/v1/articles/{id} [get]
 func GetArticle(c *gin.Context) {
 	appG := app.Gin{C: c}
-	id := uint(com.StrTo(c.Param("id")).MustInt())
-	if id < 1 {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
 		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
 
-	articleService := article_service.Article{ID: id}
+	articleService := article_service.Article{ID: uint(id)}
 	exists, err := articleService.ExistByID()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_CHECK_EXIST_ARTICLE_FAIL, nil)
@@ -62,7 +63,7 @@ func GetArticles(c *gin.Context) {
 	appG := app.Gin{C: c}
 
 	state := -1
-	if arg := c.PostForm("state"); arg != "" {
+	if arg := c.Query("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
 		if state < 0 || state > 1 {
 			appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
@@ -70,9 +71,14 @@ func GetArticles(c *gin.Context) {
 		}
 	}
 
-	tagId := -1
-	if arg := c.PostForm("tag_id"); arg != "" {
-		tagId = com.StrTo(arg).MustInt()
+	var tagId int64 = -1
+	if arg := c.Query("tag_id"); arg != "" {
+		var err error
+		tagId, err = strconv.ParseInt(arg, 10, 64)
+		if err != nil {
+			appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+			return
+		}
 		if tagId < 1 {
 			appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 			return
@@ -106,12 +112,12 @@ func GetArticles(c *gin.Context) {
 }
 
 type AddArticleForm struct {
-	TagID         int    `json:"tag_id" binding:"required,min=1"`
+	TagID         uint   `json:"tag_id" binding:"required,min=1"`
 	Title         string `json:"title" binding:"required,max=100"`
 	Desc          string `json:"desc" binding:"required,max=255"`
 	Content       string `json:"content" binding:"required,max=65535"`
 	CreatedBy     string `json:"created_by" binding:"required,max=100"`
-	CoverImageUrl string `json:"cover_image_url" binding:"required,max=255"`
+	CoverImageUrl string `json:"cover_image_url" binding:"required,url"`
 	State         int    `json:"state" binding:"required,is-valid-state"`
 }
 
@@ -132,9 +138,9 @@ func AddArticle(c *gin.Context) {
 		form AddArticleForm
 	)
 
-	httpCode, errCode := app.BindAndValid(c, &form)
+	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &form)
 	if errCode != e.SUCCESS {
-		appG.Response(httpCode, errCode, nil)
+		appG.Response(httpCode, errCode, errors)
 		return
 	}
 
@@ -150,7 +156,7 @@ func AddArticle(c *gin.Context) {
 		return
 	}
 	articleService := article_service.Article{
-		TagID:         uint(form.TagID),
+		TagID:         form.TagID,
 		Title:         form.Title,
 		Desc:          form.Desc,
 		Content:       form.Content,
@@ -169,12 +175,12 @@ func AddArticle(c *gin.Context) {
 type EditArticleForm struct {
 	ID            int    `json:"id" binding:"required,min=1"`
 	TagID         int    `json:"tag_id" binding:"required,min=1"`
-	Title         string `json:"title" binding:"required,max=100"`
-	Desc          string `json:"desc" binding:"required,max=255"`
-	Content       string `json:"content" binding:"required,max=65535"`
-	ModifiedBy    string `json:"modified_by" binding:"required,max=100"`
-	CoverImageUrl string `json:"cover_image_url" binding:"required,max=255"`
-	State         int    `json:"state" binding:"required,is-valid-state"`
+	Title         string `json:"title"`
+	Desc          string `json:"desc"`
+	Content       string `json:"content"`
+	ModifiedBy    string `json:"modified_by"`
+	CoverImageUrl string `json:"cover_image_url"`
+	State         int    `json:"state"`
 }
 
 // @Summary Update article
@@ -195,9 +201,9 @@ func EditArticle(c *gin.Context) {
 		form = EditArticleForm{ID: com.StrTo(c.Param("id")).MustInt()}
 	)
 
-	httpCode, errCode := app.BindAndValid(c, &form)
+	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &form)
 	if errCode != e.SUCCESS {
-		appG.Response(httpCode, errCode, nil)
+		appG.Response(httpCode, errCode, errors)
 		return
 	}
 	articleService := article_service.Article{

@@ -27,21 +27,16 @@ type Article struct {
 }
 
 func (a *Article) Add() error {
-	article := map[string]interface{}{
-		"tag_id":          a.TagID,
-		"title":           a.Title,
-		"desc":            a.Desc,
-		"content":         a.Content,
-		"created_by":      a.CreatedBy,
-		"cover_image_url": a.CoverImageUrl,
-		"state":           a.State,
+	article := models.Article{
+		TagID:         a.TagID,
+		Title:         a.Title,
+		Desc:          a.Desc,
+		Content:       a.Content,
+		CreatedBy:     a.CreatedBy,
+		State:         a.State,
+		CoverImageUrl: a.CoverImageUrl,
 	}
-
-	if err := models.AddArticle(article); err != nil {
-		return err
-	}
-
-	return nil
+	return models.AddArticle2(&article)
 }
 
 func (a *Article) Edit() error {

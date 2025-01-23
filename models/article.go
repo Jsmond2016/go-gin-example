@@ -70,7 +70,7 @@ func EditArticle(id uint, data interface{}) error {
 // AddArticle add a single article
 func AddArticle(data map[string]interface{}) error {
 	article := Article{
-		TagID:         uint(data["tag_id"].(int)),
+		TagID:         data["tag_id"].(uint),
 		Title:         data["title"].(string),
 		Desc:          data["desc"].(string),
 		Content:       data["content"].(string),
@@ -89,4 +89,9 @@ func DeleteArticle(id uint) error {
 // CleanAllArticle clear all soft deleted articles
 func CleanAllArticle() error {
 	return db.Unscoped().Where("deleted_at IS NOT NULL").Delete(&Article{}).Error
+}
+
+// AddArticle2 添加文章（新方法，直接接收结构体）
+func AddArticle2(article *Article) error {
+	return db.Create(article).Error
 }

@@ -3,7 +3,7 @@
 # @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2IiwicGFzc3dvcmQiOiJjYzAzZTc0N2E2YWZiYmNiZjhiZTc2NjhhY2ZlYmVlNSIsImlzcyI6Imdpbi1ibG9nIiwiZXhwIjoxNzM3NjIyOTI5LCJuYmYiOjE3Mzc2MTIxMjksImlhdCI6MTczNzYxMjEyOX0.SPIR5PvPLPnB_F2yi83V81ytv88nZEUfXA8VNUXWbFI
 
 ### Login
-POST http://localhost:8000/auth
+POST {{baseUrl}}/api/v1/auth
 Content-Type: application/json
 
 {
@@ -12,22 +12,22 @@ Content-Type: application/json
 }
 
 ### 获取标签列表
-GET {{baseUrl}}/api/v1/tags?name=test&state=1
+GET {{baseUrl}}/api/v1/tags
 Authorization: {{token}}
 
 ### Add new tag
-POST http://localhost:8000/api/v1/tags
+POST {{baseUrl}}/api/v1/tags
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "name": "test tag",
+    "name": "test tag 0031111",
     "created_by": "test",
     "state": 1
 }
 
 ### Edit tag
-PUT http://localhost:8000/api/v1/tags/1
+PUT {{baseUrl}}/api/v1/tags/2
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -38,11 +38,11 @@ Authorization: Bearer {{token}}
 }
 
 ### 删除标签
-DELETE {{baseUrl}}/api/v1/tags/1
+DELETE {{baseUrl}}/api/v1/tags/2
 Authorization: {{token}}
 
 ### Export tags
-POST http://localhost:8000/api/v1/tags/export
+POST {{baseUrl}}/api/v1/tags/export
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -63,7 +63,7 @@ Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ### 获取文章列表
-GET {{baseUrl}}/api/v1/articles
+GET {{baseUrl}}/api/v1/articles?state=1&tag_id=2
 Authorization: {{token}}
 
 ### 获取单个文章
@@ -76,12 +76,13 @@ Content-Type: application/json
 Authorization: {{token}}
 
 {
-    "tag_id": 1,
+    "tag_id": 2,
     "title": "测试文章",
     "desc": "这是一篇测试文章",
     "content": "文章内容",
-    "created_by": "admin",
-    "state": 1
+    "created_by": "test",
+    "state": 1,
+    "cover_image_url": "https://www.baidu.com/test.jpg"
 }
 
 ### 更新文章
@@ -90,7 +91,7 @@ Content-Type: application/json
 Authorization: {{token}}
 
 {
-    "tag_id": "1",
+    "tag_id": 1,
     "title": "更新后的文章",
     "desc": "更新后的描述",
     "content": "更新后的内容",

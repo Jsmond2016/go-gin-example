@@ -27,9 +27,9 @@ func GetAuth(c *gin.Context) {
 	appG := app.Gin{C: c}
 	var a auth
 
-	httpCode, errCode := app.BindAndValid(c, &a)
+	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &a)
 	if errCode != e.SUCCESS {
-		appG.Response(httpCode, errCode, nil)
+		appG.Response(httpCode, errCode, errors)
 		return
 	}
 

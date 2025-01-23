@@ -74,9 +74,9 @@ func AddTag(c *gin.Context) {
 		form AddTagForm
 	)
 
-	httpCode, errCode := app.BindAndValid(c, &form)
+	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &form)
 	if errCode != e.SUCCESS {
-		appG.Response(httpCode, errCode, nil)
+		appG.Response(httpCode, errCode, errors)
 		return
 	}
 
@@ -108,7 +108,7 @@ type EditTagForm struct {
 	ID         uint   `json:"id" binding:"required,min=1"`
 	Name       string `json:"name" binding:"required,max=100"`
 	ModifiedBy string `json:"modified_by" binding:"required,max=100"`
-	State      int    `json:"state" binding:"required,is-valid-state"`
+	State      int    `json:"state" binding:"required" validate:"required,is-valid-state"`
 }
 
 // @Summary Update article tag
@@ -123,12 +123,25 @@ type EditTagForm struct {
 func EditTag(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
-		form = EditTagForm{ID: uint(com.StrTo(c.Param("id")).MustInt())}
+		form EditTagForm
 	)
 
-	httpCode, errCode := app.BindAndValid(c, &form)
+	id := c.Param("id")
+	if id == "" {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	idInt, err := com.StrTo(id).Int()
+	if err != nil || idInt <= 0 {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+	form.ID = uint(idInt)
+
+	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &form)
 	if errCode != e.SUCCESS {
-		appG.Response(httpCode, errCode, nil)
+		appG.Response(httpCode, errCode, errors)
 		return
 	}
 

@@ -1,5 +1,11 @@
 package models
 
+import (
+	"errors"
+
+	"gorm.io/gorm"
+)
+
 type Tag struct {
 	Model
 
@@ -14,9 +20,12 @@ func ExistTagByName(name string) (bool, error) {
 	var tag Tag
 	err := db.Select("id").Where("name = ?", name).First(&tag).Error
 	if err != nil {
-		return false, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil // 记录不存在，返回 false 且无错误
+		}
+		return false, err // 其他错误则返回错误
 	}
-	return true, nil
+	return true, nil // 找到记录，返回 true
 }
 
 // AddTag Add a Tag
