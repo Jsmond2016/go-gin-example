@@ -1,16 +1,22 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "An example of gin",
-        "title": "Golang Gin API",
-        "termsOfService": "https://github.com/EDDYCJY/go-gin-example",
-        "contact": {},
+        "description": "This is a sample server.",
+        "title": "go-gin-example API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
         "license": {
-            "name": "MIT",
-            "url": "https://github.com/EDDYCJY/go-gin-example/blob/master/LICENSE"
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         },
         "version": "1.0"
     },
+    "host": "localhost:8000",
+    "basePath": "/api/v1",
     "paths": {
         "/api/v1/articles": {
             "get": {
@@ -60,63 +66,21 @@
                 }
             },
             "post": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "summary": "Add article",
                 "parameters": [
                     {
-                        "description": "TagID",
-                        "name": "tag_id",
+                        "description": "Add article",
+                        "name": "article",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "description": "Title",
-                        "name": "title",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Desc",
-                        "name": "desc",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Content",
-                        "name": "content",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "CreatedBy",
-                        "name": "created_by",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "State",
-                        "name": "state",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                            "$ref": "#/definitions/v1.AddArticleForm"
                         }
                     }
                 ],
@@ -136,17 +100,17 @@
                 }
             }
         },
-        "/api/v1/articles/{id}": {
-            "get": {
+        "/api/v1/articles/poster/generate": {
+            "post": {
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Get a single article",
+                "summary": "Generate article poster",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID",
-                        "name": "id",
+                        "description": "ArticleID",
+                        "name": "article_id",
                         "in": "path",
                         "required": true
                     }
@@ -165,8 +129,13 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/v1/articles/{id}": {
             "put": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -180,52 +149,12 @@
                         "required": true
                     },
                     {
-                        "description": "TagID",
-                        "name": "tag_id",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Title",
-                        "name": "title",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Desc",
-                        "name": "desc",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Content",
-                        "name": "content",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "ModifiedBy",
-                        "name": "modified_by",
+                        "description": "Edit article",
+                        "name": "article",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "State",
-                        "name": "state",
-                        "in": "body",
-                        "schema": {
-                            "type": "integer"
+                            "$ref": "#/definitions/v1.EditArticleForm"
                         }
                     }
                 ],
@@ -256,6 +185,42 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get Auth",
+                "parameters": [
+                    {
+                        "description": "Auth",
+                        "name": "auth",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.auth"
+                        }
                     }
                 ],
                 "responses": {
@@ -310,34 +275,21 @@
                 }
             },
             "post": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "summary": "Add article tag",
                 "parameters": [
                     {
-                        "description": "Name",
-                        "name": "name",
+                        "description": "Add tag",
+                        "name": "tag",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "State",
-                        "name": "state",
-                        "in": "body",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "description": "CreatedBy",
-                        "name": "created_by",
-                        "in": "body",
-                        "schema": {
-                            "type": "integer"
+                            "$ref": "#/definitions/v1.AddTagForm"
                         }
                     }
                 ],
@@ -359,25 +311,21 @@
         },
         "/api/v1/tags/export": {
             "post": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "summary": "Export article tag",
                 "parameters": [
                     {
-                        "description": "Name",
-                        "name": "name",
+                        "description": "Export tag",
+                        "name": "tag",
                         "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "State",
-                        "name": "state",
-                        "in": "body",
-                        "schema": {
-                            "type": "integer"
+                            "$ref": "#/definitions/v1.ExportTagForm"
                         }
                     }
                 ],
@@ -399,15 +347,18 @@
         },
         "/api/v1/tags/import": {
             "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Import Image",
+                "summary": "Import article tag",
                 "parameters": [
                     {
                         "type": "file",
-                        "description": "Image File",
-                        "name": "image",
+                        "description": "Excel File",
+                        "name": "file",
                         "in": "formData",
                         "required": true
                     }
@@ -430,6 +381,9 @@
         },
         "/api/v1/tags/{id}": {
             "put": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -443,29 +397,12 @@
                         "required": true
                     },
                     {
-                        "description": "Name",
-                        "name": "name",
+                        "description": "Edit tag",
+                        "name": "tag",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "State",
-                        "name": "state",
-                        "in": "body",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "description": "ModifiedBy",
-                        "name": "modified_by",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/v1.EditTagForm"
                         }
                     }
                 ],
@@ -513,58 +450,166 @@
                     }
                 }
             }
-        },
-        "/auth": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Get Auth",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "userName",
-                        "name": "username",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "password",
-                        "name": "password",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/app.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/app.Response"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
+        "api.auth": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "app.Response": {
             "type": "object",
             "properties": {
                 "code": {
                     "type": "integer"
                 },
-                "data": {
-                    "type": "object"
-                },
+                "data": {},
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "v1.AddArticleForm": {
+            "type": "object",
+            "required": [
+                "content",
+                "cover_image_url",
+                "created_by",
+                "desc",
+                "state",
+                "tag_id",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 65535
+                },
+                "cover_image_url": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "desc": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "state": {
+                    "type": "integer"
+                },
+                "tag_id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
+        "v1.AddTagForm": {
+            "type": "object",
+            "required": [
+                "created_by",
+                "name",
+                "state"
+            ],
+            "properties": {
+                "created_by": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "state": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.EditArticleForm": {
+            "type": "object",
+            "required": [
+                "id",
+                "tag_id"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "cover_image_url": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "modified_by": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "integer"
+                },
+                "tag_id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.EditTagForm": {
+            "type": "object",
+            "required": [
+                "id",
+                "modified_by",
+                "name",
+                "state"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "modified_by": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "state": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.ExportTagForm": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "integer"
                 }
             }
         }

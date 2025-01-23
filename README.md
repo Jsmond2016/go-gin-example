@@ -49,6 +49,22 @@ $ cd $GOPATH/src/go-gin-example
 $ go run main.go 
 ```
 
+### Run front project
+
+```
+$ cd frontend
+$ pnpm install
+$ pnpm run dev
+```
+
+
+### Test Apis
+
+- use VS Code Editor, install plugin `rest client`
+- `cd docs` and open `test.http` file
+- click `Send Request` button to test apis
+
+
 Project information and existing API
 
 ```

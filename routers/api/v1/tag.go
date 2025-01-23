@@ -61,10 +61,9 @@ type AddTagForm struct {
 }
 
 // @Summary Add article tag
-// @Produce  json
-// @Param name body string true "Name"
-// @Param state body int false "State"
-// @Param created_by body int false "CreatedBy"
+// @Produce json
+// @Accept json
+// @Param tag body AddTagForm true "Add tag"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
 // @Router /api/v1/tags [post]
@@ -112,11 +111,10 @@ type EditTagForm struct {
 }
 
 // @Summary Update article tag
-// @Produce  json
+// @Produce json
+// @Accept json
 // @Param id path int true "ID"
-// @Param name body string true "Name"
-// @Param state body int false "State"
-// @Param modified_by body string true "ModifiedBy"
+// @Param tag body EditTagForm true "Edit tag"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
 // @Router /api/v1/tags/{id} [put]
@@ -206,20 +204,23 @@ func DeleteTag(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
 
+// ExportTagForm 用于导出标签的请求结构
+type ExportTagForm struct {
+	Name  string `json:"name"`
+	State int    `json:"state"`
+}
+
 // @Summary Export article tag
-// @Produce  json
-// @Param name body string false "Name"
-// @Param state body int false "State"
+// @Produce json
+// @Accept json
+// @Param tag body ExportTagForm true "Export tag"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
 // @Router /api/v1/tags/export [post]
 func ExportTag(c *gin.Context) {
 	appG := app.Gin{C: c}
 
-	var param struct {
-		Name  string `json:"name"`
-		State int    `json:"state"`
-	}
+	var param ExportTagForm
 
 	if err := c.ShouldBindJSON(&param); err != nil {
 		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
@@ -250,10 +251,11 @@ func ExportTag(c *gin.Context) {
 
 // @Summary Import article tag
 // @Produce  json
-// @Param file body file true "Excel File"
-// @Success 200 {object} app.Response
-// @Failure 500 {object} app.Response
-// @Router /api/v1/tags/import [post]
+// @Accept   multipart/form-data
+// @Param    file formData file true "Excel File"
+// @Success  200 {object} app.Response
+// @Failure  500 {object} app.Response
+// @Router   /api/v1/tags/import [post]
 func ImportTag(c *gin.Context) {
 	appG := app.Gin{C: c}
 

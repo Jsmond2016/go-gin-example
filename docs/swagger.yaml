@@ -1,21 +1,130 @@
+basePath: /api/v1
 definitions:
+  api.auth:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
   app.Response:
     properties:
       code:
         type: integer
-      data:
-        type: object
+      data: {}
       msg:
         type: string
     type: object
+  v1.AddArticleForm:
+    properties:
+      content:
+        maxLength: 65535
+        type: string
+      cover_image_url:
+        type: string
+      created_by:
+        maxLength: 100
+        type: string
+      desc:
+        maxLength: 255
+        type: string
+      state:
+        type: integer
+      tag_id:
+        minimum: 1
+        type: integer
+      title:
+        maxLength: 100
+        type: string
+    required:
+    - content
+    - cover_image_url
+    - created_by
+    - desc
+    - state
+    - tag_id
+    - title
+    type: object
+  v1.AddTagForm:
+    properties:
+      created_by:
+        maxLength: 100
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      state:
+        type: integer
+    required:
+    - created_by
+    - name
+    - state
+    type: object
+  v1.EditArticleForm:
+    properties:
+      content:
+        type: string
+      cover_image_url:
+        type: string
+      desc:
+        type: string
+      id:
+        minimum: 1
+        type: integer
+      modified_by:
+        type: string
+      state:
+        type: integer
+      tag_id:
+        minimum: 1
+        type: integer
+      title:
+        type: string
+    required:
+    - id
+    - tag_id
+    type: object
+  v1.EditTagForm:
+    properties:
+      id:
+        minimum: 1
+        type: integer
+      modified_by:
+        maxLength: 100
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      state:
+        type: integer
+    required:
+    - id
+    - modified_by
+    - name
+    - state
+    type: object
+  v1.ExportTagForm:
+    properties:
+      name:
+        type: string
+      state:
+        type: integer
+    type: object
+host: localhost:8000
 info:
-  contact: {}
-  description: An example of gin
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server.
   license:
-    name: MIT
-    url: https://github.com/EDDYCJY/go-gin-example/blob/master/LICENSE
-  termsOfService: https://github.com/EDDYCJY/go-gin-example
-  title: Golang Gin API
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: go-gin-example API
   version: "1.0"
 paths:
   /api/v1/articles:
@@ -49,43 +158,15 @@ paths:
             $ref: '#/definitions/app.Response'
       summary: Get multiple articles
     post:
+      consumes:
+      - application/json
       parameters:
-      - description: TagID
+      - description: Add article
         in: body
-        name: tag_id
+        name: article
         required: true
         schema:
-          type: integer
-      - description: Title
-        in: body
-        name: title
-        required: true
-        schema:
-          type: string
-      - description: Desc
-        in: body
-        name: desc
-        required: true
-        schema:
-          type: string
-      - description: Content
-        in: body
-        name: content
-        required: true
-        schema:
-          type: string
-      - description: CreatedBy
-        in: body
-        name: created_by
-        required: true
-        schema:
-          type: string
-      - description: State
-        in: body
-        name: state
-        required: true
-        schema:
-          type: integer
+          $ref: '#/definitions/v1.AddArticleForm'
       produces:
       - application/json
       responses:
@@ -118,63 +199,21 @@ paths:
           schema:
             $ref: '#/definitions/app.Response'
       summary: Delete article
-    get:
-      parameters:
-      - description: ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/app.Response'
-      summary: Get a single article
     put:
+      consumes:
+      - application/json
       parameters:
       - description: ID
         in: path
         name: id
         required: true
         type: integer
-      - description: TagID
+      - description: Edit article
         in: body
-        name: tag_id
-        schema:
-          type: string
-      - description: Title
-        in: body
-        name: title
-        schema:
-          type: string
-      - description: Desc
-        in: body
-        name: desc
-        schema:
-          type: string
-      - description: Content
-        in: body
-        name: content
-        schema:
-          type: string
-      - description: ModifiedBy
-        in: body
-        name: modified_by
+        name: article
         required: true
         schema:
-          type: string
-      - description: State
-        in: body
-        name: state
-        schema:
-          type: integer
+          $ref: '#/definitions/v1.EditArticleForm'
       produces:
       - application/json
       responses:
@@ -187,6 +226,49 @@ paths:
           schema:
             $ref: '#/definitions/app.Response'
       summary: Update article
+  /api/v1/articles/poster/generate:
+    post:
+      parameters:
+      - description: ArticleID
+        in: path
+        name: article_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.Response'
+      summary: Generate article poster
+  /api/v1/auth:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Auth
+        in: body
+        name: auth
+        required: true
+        schema:
+          $ref: '#/definitions/api.auth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.Response'
+      summary: Get Auth
   /api/v1/tags:
     get:
       parameters:
@@ -211,23 +293,15 @@ paths:
             $ref: '#/definitions/app.Response'
       summary: Get multiple article tags
     post:
+      consumes:
+      - application/json
       parameters:
-      - description: Name
+      - description: Add tag
         in: body
-        name: name
+        name: tag
         required: true
         schema:
-          type: string
-      - description: State
-        in: body
-        name: state
-        schema:
-          type: integer
-      - description: CreatedBy
-        in: body
-        name: created_by
-        schema:
-          type: integer
+          $ref: '#/definitions/v1.AddTagForm'
       produces:
       - application/json
       responses:
@@ -261,29 +335,20 @@ paths:
             $ref: '#/definitions/app.Response'
       summary: Delete article tag
     put:
+      consumes:
+      - application/json
       parameters:
       - description: ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Name
+      - description: Edit tag
         in: body
-        name: name
+        name: tag
         required: true
         schema:
-          type: string
-      - description: State
-        in: body
-        name: state
-        schema:
-          type: integer
-      - description: ModifiedBy
-        in: body
-        name: modified_by
-        required: true
-        schema:
-          type: string
+          $ref: '#/definitions/v1.EditTagForm'
       produces:
       - application/json
       responses:
@@ -298,17 +363,15 @@ paths:
       summary: Update article tag
   /api/v1/tags/export:
     post:
+      consumes:
+      - application/json
       parameters:
-      - description: Name
+      - description: Export tag
         in: body
-        name: name
+        name: tag
+        required: true
         schema:
-          type: string
-      - description: State
-        in: body
-        name: state
-        schema:
-          type: integer
+          $ref: '#/definitions/v1.ExportTagForm'
       produces:
       - application/json
       responses:
@@ -323,10 +386,12 @@ paths:
       summary: Export article tag
   /api/v1/tags/import:
     post:
+      consumes:
+      - multipart/form-data
       parameters:
-      - description: Image File
+      - description: Excel File
         in: formData
-        name: image
+        name: file
         required: true
         type: file
       produces:
@@ -340,30 +405,5 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/app.Response'
-      summary: Import Image
-  /auth:
-    get:
-      parameters:
-      - description: userName
-        in: query
-        name: username
-        required: true
-        type: string
-      - description: password
-        in: query
-        name: password
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/app.Response'
-      summary: Get Auth
+      summary: Import article tag
 swagger: "2.0"

@@ -17,12 +17,12 @@ type auth struct {
 }
 
 // @Summary Get Auth
-// @Produce  json
-// @Param username body string true "userName"
-// @Param password body string true "password"
+// @Produce json
+// @Accept json
+// @Param auth body auth true "Auth"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
-// @Router /auth [post]
+// @Router /api/v1/auth [post]
 func GetAuth(c *gin.Context) {
 	appG := app.Gin{C: c}
 	var a auth

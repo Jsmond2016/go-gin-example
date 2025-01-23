@@ -10,6 +10,7 @@ type Gin struct {
 	C *gin.Context
 }
 
+// Response 用于swagger文档
 type Response struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"msg"`

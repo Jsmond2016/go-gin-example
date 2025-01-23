@@ -17,12 +17,13 @@ import (
 	"github.com/EDDYCJY/go-gin-example/service/tag_service"
 )
 
-// @Summary Get a single article
-// @Produce  json
-// @Param id path int true "ID"
+// @Summary Get multiple articles
+// @Produce json
+// @Param tag_id query int false "TagID"
+// @Param state query int false "State"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
-// @Router /api/v1/articles/{id} [get]
+// @Router /api/v1/articles [get]
 func GetArticle(c *gin.Context) {
 	appG := app.Gin{C: c}
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
@@ -122,13 +123,9 @@ type AddArticleForm struct {
 }
 
 // @Summary Add article
-// @Produce  json
-// @Param tag_id body int true "TagID"
-// @Param title body string true "Title"
-// @Param desc body string true "Desc"
-// @Param content body string true "Content"
-// @Param created_by body string true "CreatedBy"
-// @Param state body int true "State"
+// @Produce json
+// @Accept json
+// @Param article body AddArticleForm true "Add article"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
 // @Router /api/v1/articles [post]
@@ -184,14 +181,10 @@ type EditArticleForm struct {
 }
 
 // @Summary Update article
-// @Produce  json
+// @Produce json
+// @Accept json
 // @Param id path int true "ID"
-// @Param tag_id body string false "TagID"
-// @Param title body string false "Title"
-// @Param desc body string false "Desc"
-// @Param content body string false "Content"
-// @Param modified_by body string true "ModifiedBy"
-// @Param state body int false "State"
+// @Param article body EditArticleForm true "Edit article"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
 // @Router /api/v1/articles/{id} [put]
