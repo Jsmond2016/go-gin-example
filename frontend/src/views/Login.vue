@@ -1,96 +1,139 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
-        </h2>
-      </div>
-      <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
-        <div class="rounded-md shadow-sm -space-y-px">
-          <div>
-            <label for="username" class="sr-only">Username</label>
-            <input
-              id="username"
-              v-model="username"
-              name="username"
-              type="text"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Username"
-            />
-          </div>
-          <div>
-            <label for="password" class="sr-only">Password</label>
-            <input
-              id="password"
-              v-model="password"
-              name="password"
-              type="password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Password"
-            />
-          </div>
+  <div class="login-container">
+    <el-card class="login-card">
+      <template #header>
+        <div class="text-center">
+          <h2 class="text-2xl font-bold text-gray-800">博客管理系统</h2>
         </div>
+      </template>
+      
+      <el-form
+        ref="formRef"
+        :model="loginForm"
+        :rules="rules"
+        label-position="top"
+        @keyup.enter="handleLogin"
+      >
+        <el-form-item label="用户名" prop="username">
+          <el-input
+            v-model="loginForm.username"
+            placeholder="请输入用户名"
+            :prefix-icon="User"
+          />
+        </el-form-item>
+        
+        <el-form-item label="密码" prop="password">
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="请输入密码"
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
 
-        <div>
-          <button
-            type="submit"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            :disabled="loading"
+        <el-form-item>
+          <el-button
+            type="primary"
+            class="w-full"
+            :loading="loading"
+            @click="handleLogin"
           >
-            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg
-                class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </span>
-            {{ loading ? 'Signing in...' : 'Sign in' }}
-          </button>
-        </div>
-      </form>
-    </div>
+            {{ loading ? '登录中...' : '登录' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
-
-const username = ref('')
-const password = ref('')
+const formRef = ref()
 const loading = ref(false)
 
-const handleSubmit = async () => {
-  loading.value = true
-  try {
-    const success = await authStore.login(username.value, password.value)
-    if (success) {
-      const redirectPath = route.query.redirect as string || '/'
-      router.push(redirectPath)
-    } else {
-      alert('Invalid credentials')
-    }
-  } catch (error) {
-    console.error('Login error:', error)
-    alert('An error occurred during login')
-  } finally {
-    loading.value = false
-  }
+const loginForm = ref({
+  username: '',
+  password: ''
+})
+
+const rules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度应在 3 到 20 个字符之间', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度应在 6 到 20 个字符之间', trigger: 'blur' }
+  ]
 }
-</script> 
+
+const handleLogin = async () => {
+  if (!formRef.value) return
+  
+  await formRef.value.validate(async (valid: boolean) => {
+    if (!valid) return
+    
+    loading.value = true
+    try {
+      const success = await authStore.login(loginForm.value)
+      if (success) {
+        ElMessage.success('登录成功')
+        router.push('/')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      ElMessage.error('登录失败，请检查用户名和密码')
+    } finally {
+      loading.value = false
+    }
+  })
+}
+</script>
+
+<style scoped>
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-card :deep(.el-card__header) {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.login-card :deep(.el-card__body) {
+  padding: 30px;
+}
+
+.login-card :deep(.el-form-item__label) {
+  font-weight: 500;
+}
+
+.login-card :deep(.el-input__wrapper) {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.login-card :deep(.el-button) {
+  padding: 12px 20px;
+  font-size: 16px;
+}
+</style> 

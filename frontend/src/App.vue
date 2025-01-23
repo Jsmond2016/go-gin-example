@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -12,7 +13,11 @@ if (!authStore.isAuthenticated && router.currentRoute.value.path !== '/login') {
 </script>
 
 <template>
-  <router-view></router-view>
+  <el-config-provider :locale="zhCn">
+    <router-view v-slot="{ Component }">
+      <component :is="Component" />
+    </router-view>
+  </el-config-provider>
 </template>
 
 <style>

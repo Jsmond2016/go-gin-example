@@ -1,64 +1,73 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import DefaultLayout from '../layouts/DefaultLayout.vue'
+import Login from '../views/Login.vue'
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth: boolean
+  }
+}
+
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/',
+    component: DefaultLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        redirect: '/dashboard'
+      },
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/Dashboard.vue')
+      },
+      {
+        path: 'articles',
+        name: 'Articles',
+        component: () => import('@/views/articles/List.vue')
+      },
+      {
+        path: 'articles/create',
+        name: 'CreateArticle',
+        component: () => import('@/views/articles/Edit.vue')
+      },
+      {
+        path: 'articles/:id/edit',
+        name: 'EditArticle',
+        component: () => import('@/views/articles/Edit.vue')
+      },
+      {
+        path: 'tags',
+        name: 'Tags',
+        component: () => import('@/views/tags/List.vue')
+      }
+    ]
+  }
+]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: [
-    {
-      path: '/',
-      component: () => import('../views/Layout.vue'),
-      children: [
-        {
-          path: '',
-          name: 'home',
-          component: () => import('../views/Home.vue')
-        },
-        {
-          path: 'articles',
-          name: 'articles',
-          component: () => import('../views/articles/List.vue')
-        },
-        {
-          path: 'articles/create',
-          name: 'articles-create',
-          component: () => import('../views/articles/Edit.vue')
-        },
-        {
-          path: 'articles/:id',
-          name: 'articles-edit',
-          component: () => import('../views/articles/Edit.vue')
-        },
-        {
-          path: 'tags',
-          name: 'tags',
-          component: () => import('../views/tags/List.vue')
-        }
-      ],
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/Login.vue')
-    }
-  ]
+  routes
 })
 
-// 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
-  
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!authStore.isAuthenticated) {
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath }
-      })
-    } else {
-      next()
-    }
-  } else {
-    next()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return '/login'
+  }
+
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    return '/'
   }
 })
 

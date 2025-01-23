@@ -1,136 +1,131 @@
 <template>
-  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">Tags</h3>
-      <div class="flex space-x-3">
-        <button
-          @click="showCreateModal = true"
-          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-        >
-          Create Tag
-        </button>
-        <button
-          @click="handleExport"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-        >
-          Export
-        </button>
-        <label
-          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
-        >
-          Import
-          <input
-            type="file"
-            @change="handleImport"
-            class="hidden"
-            accept=".xlsx,.xls,.csv"
+  <div class="tag-list">
+    <el-card class="box-card">
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span class="text-xl font-bold">标签管理</span>
+          <el-button type="primary" @click="handleAdd">新建标签</el-button>
+        </div>
+      </template>
+
+      <!-- 搜索区域 -->
+      <el-form :inline="true" :model="searchForm" class="mb-4">
+        <el-form-item label="名称">
+          <el-input
+            v-model="searchForm.name"
+            placeholder="标签名称"
+            clearable
           />
-        </label>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select
+            v-model="searchForm.state"
+            placeholder="选择状态"
+            clearable
+          >
+            <el-option :value="1" label="启用" />
+            <el-option :value="0" label="禁用" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="resetSearch">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- 表格区域 -->
+      <el-table v-loading="loading" :data="tags" border style="width: 100%">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="name" label="名称" min-width="150" />
+        <el-table-column prop="state" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.state === 1 ? 'success' : 'info'">
+              {{ row.state === 1 ? "启用" : "禁用" }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_by" label="创建者" width="120" />
+        <el-table-column prop="created_on" label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ new Date(row.created_on * 1000).toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right">
+          <template #default="{ row }">
+            <el-button-group>
+              <el-button type="primary" :icon="Edit" @click="handleEdit(row)">
+                编辑
+              </el-button>
+              <el-button
+                type="danger"
+                :icon="Delete"
+                @click="handleDelete(row)"
+              >
+                删除
+              </el-button>
+            </el-button-group>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <div class="flex justify-end mt-4">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 30, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
       </div>
-    </div>
+    </el-card>
 
-    <div class="border-t border-gray-200">
-      <div v-if="loading" class="text-center py-4">Loading...</div>
-      <div v-else-if="error" class="text-center py-4 text-red-600">{{ error }}</div>
-      <div v-else>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="tag in tags" :key="tag.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ tag.name }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <span
-                  :class="[
-                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                    tag.state === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  ]"
-                >
-                  {{ tag.state === 1 ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button
-                  @click="editTag(tag)"
-                  class="text-indigo-600 hover:text-indigo-900 mr-4"
-                >
-                  Edit
-                </button>
-                <button
-                  @click="deleteTag(tag.id)"
-                  class="text-red-600 hover:text-red-900"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || editingTag" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
-          {{ editingTag ? 'Edit Tag' : 'Create Tag' }}
-        </h3>
-        <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-            <input
-              type="text"
-              id="name"
-              v-model="form.name"
-              required
-              class="mt-1 block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div>
-            <label for="state" class="block text-sm font-medium text-gray-700">State</label>
-            <select
-              id="state"
-              v-model="form.state"
-              required
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            >
-              <option :value="1">Active</option>
-              <option :value="0">Inactive</option>
-            </select>
-          </div>
-
-          <div class="flex justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              @click="closeModal"
-              class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              :disabled="loading"
-              class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              {{ loading ? 'Saving...' : 'Save' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <!-- 标签编辑对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="editingTag.id ? '编辑标签' : '新建标签'"
+      width="500px"
+    >
+      <el-form
+        ref="formRef"
+        :model="editingTag"
+        :rules="rules"
+        label-width="100px"
+      >
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="editingTag.name" placeholder="请输入标签名称" />
+        </el-form-item>
+        <el-form-item label="状态" prop="state">
+          <el-select v-model="editingTag.state" placeholder="请选择状态">
+            <el-option :value="1" label="启用" />
+            <el-option :value="0" label="禁用" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="submitLoading"
+            @click="handleSubmit"
+          >
+            确定
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAuthStore } from '../../stores/auth'
-import { tags as tagApi } from '../../api/services'
+import { ref, onMounted } from "vue"
+import { ElMessage, ElMessageBox } from "element-plus"
+import { Delete, Edit } from "@element-plus/icons-vue"
+import { tags as tagApi } from "../../api/services"
+import { useAuthStore } from "../../stores/auth"
 
 const authStore = useAuthStore()
 
@@ -138,153 +133,172 @@ interface Tag {
   id: number
   name: string
   state: number
+  created_by: string
+  created_on: number
 }
 
 const loading = ref(false)
-const error = ref('')
+const submitLoading = ref(false)
 const tags = ref<Tag[]>([])
-const showCreateModal = ref(false)
-const editingTag = ref<Tag | null>(null)
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const dialogVisible = ref(false)
+const formRef = ref()
 
-console.log('==>>>', authStore.username)
-
-const form = ref({
-  name: '',
-  state: 1,
-  created_by: authStore.username || '',
-  modified_by: authStore.username || ''
+const searchForm = ref({
+  name: "",
+  state: undefined,
 })
 
+const editingTag = ref({
+  id: 0,
+  name: "",
+  state: 1,
+  created_by: authStore.username || "",
+  modified_by: authStore.username || "",
+})
+
+const rules = {
+  name: [{ required: true, message: "请输入标签名称", trigger: "blur" }],
+  state: [{ required: true, message: "请选择状态", trigger: "change" }],
+}
+
+// 获取标签列表
 const fetchTags = async () => {
   loading.value = true
-  error.value = ''
   try {
-    const response = await tagApi.getList()
+    const response = await tagApi.getList({
+      page: currentPage.value,
+      page_size: pageSize.value,
+      ...searchForm.value,
+    })
     if (response.code === 200) {
-      tags.value = response.data
-    } else {
-      error.value = response.msg || 'Failed to fetch tags'
+      tags.value = response.data.lists
+      total.value = response.data.total
     }
   } catch (err) {
-    error.value = 'An error occurred while fetching tags'
-    console.error('Error fetching tags:', err)
+    console.error("Error fetching tags:", err)
+    ElMessage.error("获取标签列表失败")
   } finally {
     loading.value = false
   }
 }
 
-const closeModal = () => {
-  showCreateModal.value = false
-  editingTag.value = null
-  form.value = {
-    name: '',
+// 新建标签
+const handleAdd = () => {
+  editingTag.value = {
+    id: 0,
+    name: "",
     state: 1,
-    created_by: authStore.username || '',
-    modified_by: authStore.username || ''
+    created_by: authStore.username || "",
+    modified_by: authStore.username || "",
   }
+  dialogVisible.value = true
 }
 
-const editTag = (tag: Tag) => {
-  editingTag.value = tag
-  form.value = {
-    name: tag.name,
-    state: tag.state,
-    created_by: authStore.username || '',
-    modified_by: authStore.username || ''
+// 编辑标签
+const handleEdit = (row: Tag) => {
+  editingTag.value = {
+    ...row,
+    modified_by: authStore.username || "",
   }
+  dialogVisible.value = true
 }
 
+// 删除标签
+const handleDelete = (row: Tag) => {
+  ElMessageBox.confirm(`确定要删除标签 "${row.name}" 吗？`, "警告", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning",
+  })
+    .then(async () => {
+      try {
+        const response = await tagApi.delete(row.id)
+        if (response.code === 200) {
+          ElMessage.success("删除成功")
+          fetchTags()
+        } else {
+          ElMessage.error(response.msg || "删除失败")
+        }
+      } catch (err) {
+        console.error("Error deleting tag:", err)
+        ElMessage.error("删除失败")
+      }
+    })
+    .catch(() => {})
+}
+
+// 提交表单
 const handleSubmit = async () => {
-  loading.value = true
-  try {
-    const response = editingTag.value
-      ? await tagApi.update(editingTag.value.id, {
-          name: form.value.name,
-          state: form.value.state,
-          modified_by: form.value.modified_by
-        })
-      : await tagApi.create({
-          name: form.value.name,
-          state: form.value.state,
-          created_by: Number(form.value.created_by)
-        })
+  if (!formRef.value) return
 
-    if (response.code === 200) {
-      closeModal()
-      await fetchTags()
-    } else {
-      alert(response.msg || 'Failed to save tag')
+  await formRef.value.validate(async (valid: boolean) => {
+    if (!valid) return
+
+    submitLoading.value = true
+    try {
+      const api = editingTag.value.id ? tagApi.update : tagApi.create
+      const response = await api({
+        name: editingTag.value.name,
+        state: editingTag.value.state,
+        created_by: authStore.username || "",
+        // modified_by: authStore.username || "",
+      })
+      
+      if (response.code === 200) {
+        ElMessage.success(editingTag.value.id ? "更新成功" : "创建成功")
+        dialogVisible.value = false
+        fetchTags()
+      } else {
+        ElMessage.error(
+          response.msg || (editingTag.value.id ? "更新失败" : "创建失败")
+        )
+      }
+    } catch (err) {
+      console.error("Error saving tag:", err)
+      ElMessage.error("保存失败")
+    } finally {
+      submitLoading.value = false
     }
-  } catch (err) {
-    console.error('Error saving tag:', err)
-    alert('An error occurred while saving the tag')
-  } finally {
-    loading.value = false
-  }
+  })
 }
 
-const deleteTag = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this tag?')) {
-    return
-  }
-
-  try {
-    const response = await tagApi.delete(id)
-    if (response.code === 200) {
-      await fetchTags()
-    } else {
-      alert(response.msg || 'Failed to delete tag')
-    }
-  } catch (err) {
-    console.error('Error deleting tag:', err)
-    alert('An error occurred while deleting the tag')
-  }
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchTags()
 }
 
-const handleExport = async () => {
-  try {
-    const response = await tagApi.export()
-    if (response.code === 200) {
-      // 处理导出文件
-      const blob = new Blob([response.data], { type: 'application/vnd.ms-excel' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'tags.xlsx'
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } else {
-      alert(response.msg || 'Failed to export tags')
-    }
-  } catch (err) {
-    console.error('Error exporting tags:', err)
-    alert('An error occurred while exporting tags')
+// 重置搜索
+const resetSearch = () => {
+  searchForm.value = {
+    name: "",
+    state: undefined,
   }
+  currentPage.value = 1
+  fetchTags()
 }
 
-const handleImport = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  if (!input.files?.length) return
-
-  const file = input.files[0]
-  try {
-    const response = await tagApi.import(file)
-    if (response.code === 200) {
-      await fetchTags()
-      alert('Tags imported successfully')
-    } else {
-      alert(response.msg || 'Failed to import tags')
-    }
-  } catch (err) {
-    console.error('Error importing tags:', err)
-    alert('An error occurred while importing tags')
-  } finally {
-    input.value = '' // 清除文件选择
-  }
+// 分页
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  fetchTags()
 }
 
-// 初始加载标签
-fetchTags()
-</script> 
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val
+  fetchTags()
+}
+
+onMounted(() => {
+  fetchTags()
+})
+</script>
+
+<style scoped>
+.tag-list {
+  padding: 20px;
+}
+</style>

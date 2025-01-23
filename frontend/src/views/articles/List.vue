@@ -1,116 +1,238 @@
 <template>
-  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">Articles</h3>
-      <router-link
-        to="/articles/create"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+  <div class="article-list">
+    <el-card class="box-card">
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span class="text-xl font-bold">文章列表</span>
+          <el-button type="primary" @click="$router.push('/articles/create')">
+            新建文章
+          </el-button>
+        </div>
+      </template>
+
+      <!-- 搜索区域 -->
+      <el-form :inline="true" :model="searchForm" class="mb-4">
+        <el-form-item label="标签">
+          <el-select v-model="searchForm.tag_id" placeholder="选择标签" clearable>
+            <el-option
+              v-for="tag in tags"
+              :key="tag.id"
+              :label="tag.name"
+              :value="tag.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="searchForm.state" placeholder="选择状态" clearable>
+            <el-option :value="1" label="启用" />
+            <el-option :value="0" label="禁用" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="resetSearch">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- 表格区域 -->
+      <el-table
+        v-loading="loading"
+        :data="articles"
+        border
+        style="width: 100%"
       >
-        Create Article
-      </router-link>
-    </div>
-    <div class="border-t border-gray-200">
-      <div v-if="loading" class="text-center py-4">Loading...</div>
-      <div v-else-if="error" class="text-center py-4 text-red-600">{{ error }}</div>
-      <div v-else>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="article in articles" :key="article.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ article.title }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ article.desc }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <span
-                  :class="[
-                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                    article.state === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  ]"
-                >
-                  {{ article.state === 1 ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ article.created_by }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <router-link
-                  :to="`/articles/${article.id}`"
-                  class="text-indigo-600 hover:text-indigo-900 mr-4"
-                >
-                  Edit
-                </router-link>
-                <button
-                  @click="deleteArticle(article.id)"
-                  class="text-red-600 hover:text-red-900"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="title" label="标题" min-width="200">
+          <template #default="{ row }">
+            <el-link type="primary" @click="$router.push(`/articles/${row.id}`)">
+              {{ row.title }}
+            </el-link>
+          </template>
+        </el-table-column>
+        <el-table-column prop="desc" label="描述" min-width="250" show-overflow-tooltip />
+        <el-table-column prop="tag.name" label="标签" width="120" />
+        <el-table-column prop="state" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.state === 1 ? 'success' : 'info'">
+              {{ row.state === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_by" label="创建者" width="120" />
+        <el-table-column prop="created_on" label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ new Date(row.created_on * 1000).toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right">
+          <template #default="{ row }">
+            <el-button-group>
+              <el-button
+                type="primary"
+                :icon="Edit"
+                @click="$router.push(`/articles/${row.id}/edit`)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                type="danger"
+                :icon="Delete"
+                @click="handleDelete(row)"
+              >
+                删除
+              </el-button>
+            </el-button-group>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <div class="flex justify-end mt-4">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 30, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
       </div>
-    </div>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { articles as articleApi } from '../../api/services'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Edit } from '@element-plus/icons-vue'
+import { articles as articleApi, tags as tagApi } from '../../api/services'
+
+interface Tag {
+  id: number
+  name: string
+}
 
 interface Article {
   id: number
   title: string
   desc: string
+  content: string
+  tag: Tag
   state: number
   created_by: string
+  created_on: number
 }
 
+const router = useRouter()
 const loading = ref(false)
-const error = ref('')
 const articles = ref<Article[]>([])
+const tags = ref<Tag[]>([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(10)
 
-const fetchArticles = async () => {
-  loading.value = true
-  error.value = ''
+const searchForm = ref({
+  tag_id: undefined,
+  state: undefined
+})
+
+// 获取标签列表
+const fetchTags = async () => {
   try {
-    const response = await articleApi.getList()
+    const response = await tagApi.getList()
     if (response.code === 200) {
-      articles.value = response.data
-    } else {
-      error.value = response.msg || 'Failed to fetch articles'
+      tags.value = response.data
     }
   } catch (err) {
-    error.value = 'An error occurred while fetching articles'
+    console.error('Error fetching tags:', err)
+    ElMessage.error('获取标签列表失败')
+  }
+}
+
+// 获取文章列表
+const fetchArticles = async () => {
+  loading.value = true
+  try {
+    const response = await articleApi.getList({
+      page: currentPage.value,
+      page_size: pageSize.value,
+      ...searchForm.value
+    })
+    if (response.code === 200) {
+      articles.value = response.data.lists
+      total.value = response.data.total
+    }
+  } catch (err) {
     console.error('Error fetching articles:', err)
+    ElMessage.error('获取文章列表失败')
   } finally {
     loading.value = false
   }
 }
 
-const deleteArticle = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this article?')) {
-    return
-  }
-
-  try {
-    const response = await articleApi.delete(id)
-    if (response.code === 200) {
-      await fetchArticles()
-    } else {
-      alert(response.msg || 'Failed to delete article')
+// 处理删除
+const handleDelete = (row: Article) => {
+  ElMessageBox.confirm(
+    `确定要删除文章 "${row.title}" 吗？`,
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
     }
-  } catch (err) {
-    console.error('Error deleting article:', err)
-    alert('An error occurred while deleting the article')
-  }
+  ).then(async () => {
+    try {
+      const response = await articleApi.delete(row.id)
+      if (response.code === 200) {
+        ElMessage.success('删除成功')
+        fetchArticles()
+      } else {
+        ElMessage.error(response.msg || '删除失败')
+      }
+    } catch (err) {
+      console.error('Error deleting article:', err)
+      ElMessage.error('删除失败')
+    }
+  }).catch(() => {})
 }
 
-onMounted(fetchArticles)
-</script> 
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchArticles()
+}
+
+// 重置搜索
+const resetSearch = () => {
+  searchForm.value = {
+    tag_id: undefined,
+    state: undefined
+  }
+  currentPage.value = 1
+  fetchArticles()
+}
+
+// 分页
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  fetchArticles()
+}
+
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val
+  fetchArticles()
+}
+
+onMounted(() => {
+  fetchTags()
+  fetchArticles()
+})
+</script>
+
+<style scoped>
+.article-list {
+  padding: 20px;
+}
+</style> 

@@ -1,44 +1,43 @@
 import { defineStore } from 'pinia'
-import { auth } from '../api/services'
+import request from '../api/request'
 
-interface AuthState {
-  token: string | null
-  username: string | null
+interface LoginForm {
+  username: string
+  password: string
 }
 
 export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    token: localStorage.getItem('token'),
-    username: localStorage.getItem('username')
+  state: () => ({
+    token: localStorage.getItem('token') || '',
+    username: localStorage.getItem('username') || ''
   }),
-
+  
+  getters: {
+    isAuthenticated: state => !!state.token
+  },
+  
   actions: {
-    async login(username: string, password: string) {
+    async login(form: LoginForm) {
       try {
-        const response = await auth.login(username, password)
-        if (response.code === 200 && response.data.token) {
+        const response = await request.post('/auth', form)
+        if (response.code === 200) {
           this.token = response.data.token
-          this.username = username
+          this.username = form.username
           localStorage.setItem('token', response.data.token)
-          localStorage.setItem('username', username)
+          localStorage.setItem('username', form.username)
           return true
         }
         return false
-      } catch (error) {
-        console.error('Login failed:', error)
+      } catch {
         return false
       }
     },
-
+    
     logout() {
-      this.token = null
-      this.username = null
+      this.token = ''
+      this.username = ''
       localStorage.removeItem('token')
       localStorage.removeItem('username')
     }
-  },
-
-  getters: {
-    isAuthenticated: (state) => !!state.token
   }
 }) 
