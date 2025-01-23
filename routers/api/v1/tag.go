@@ -55,9 +55,9 @@ func GetTags(c *gin.Context) {
 }
 
 type AddTagForm struct {
-	Name      string `form:"name" binding:"required,max=100"`
-	CreatedBy string `form:"created_by" binding:"required,max=100"`
-	State     int    `form:"state" binding:"required,is-valid-state"`
+	Name      string `json:"name" binding:"required,max=100"`
+	CreatedBy string `json:"created_by" binding:"required,max=100"`
+	State     int    `json:"state" binding:"required,is-valid-state"`
 }
 
 // @Summary Add article tag
@@ -105,10 +105,10 @@ func AddTag(c *gin.Context) {
 }
 
 type EditTagForm struct {
-	ID         uint   `form:"id" binding:"required,min=1"`
-	Name       string `form:"name" binding:"required,max=100"`
-	ModifiedBy string `form:"modified_by" binding:"required,max=100"`
-	State      int    `form:"state" binding:"required,is-valid-state"`
+	ID         uint   `json:"id" binding:"required,min=1"`
+	Name       string `json:"name" binding:"required,max=100"`
+	ModifiedBy string `json:"modified_by" binding:"required,max=100"`
+	State      int    `json:"state" binding:"required,is-valid-state"`
 }
 
 // @Summary Update article tag
@@ -202,14 +202,24 @@ func DeleteTag(c *gin.Context) {
 // @Router /api/v1/tags/export [post]
 func ExportTag(c *gin.Context) {
 	appG := app.Gin{C: c}
-	name := c.PostForm("name")
+
+	var param struct {
+		Name  string `json:"name"`
+		State int    `json:"state"`
+	}
+
+	if err := c.ShouldBindJSON(&param); err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
 	state := -1
-	if arg := c.PostForm("state"); arg != "" {
-		state = com.StrTo(arg).MustInt()
+	if param.State != 0 {
+		state = param.State
 	}
 
 	tagService := tag_service.Tag{
-		Name:  name,
+		Name:  param.Name,
 		State: state,
 	}
 

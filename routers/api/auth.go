@@ -12,8 +12,8 @@ import (
 )
 
 type auth struct {
-	Username string `form:"username" binding:"required,max=50"`
-	Password string `form:"password" binding:"required,max=50"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 // @Summary Get Auth

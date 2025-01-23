@@ -55,6 +55,14 @@ func Setup() {
 
 	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	// TODO: 只在开发环境生效，自动迁移所有数据结构
+	db.AutoMigrate(
+		&Tag{},
+		&Article{},
+		&Auth{},
+		// 添加其他所有的模型结构
+	)
 }
 
 // CloseDB closes database connection (unnecessary for GORM v2 but kept for compatibility)

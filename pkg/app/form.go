@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 
 	"github.com/EDDYCJY/go-gin-example/pkg/e"
@@ -13,9 +14,10 @@ import (
 var validate *validator.Validate
 
 func init() {
-	validate = validator.New()
-	// 注册自定义验证器
-	validate.RegisterValidation("is-valid-state", validateState)
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// 注册自定义验证器
+		v.RegisterValidation("is-valid-state", validateState)
+	}
 }
 
 // validateState 验证状态值是否有效

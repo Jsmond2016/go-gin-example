@@ -66,6 +66,16 @@
             </select>
           </div>
 
+          <div>
+            <label for="cover_image_url" class="block text-sm font-medium text-gray-700">Cover Image URL</label>
+            <input
+              type="text"
+              id="cover_image_url"
+              v-model="form.cover_image_url"
+              class="mt-1 block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
+            />
+          </div>
+
           <div class="flex justify-end space-x-3">
             <button
               type="button"
@@ -115,7 +125,8 @@ const form = ref({
   tag_id: '',
   state: 1,
   created_by: authStore.username || '',
-  modified_by: authStore.username || ''
+  modified_by: authStore.username || '',
+  cover_image_url: ''
 })
 
 const fetchTags = async () => {
@@ -159,7 +170,8 @@ const handleSubmit = async () => {
         desc: form.value.desc,
         content: form.value.content,
         state: form.value.state,
-        modified_by: form.value.modified_by
+        modified_by: form.value.modified_by,
+        cover_image_url: form.value.cover_image_url
       }
       const response = await articleApi.update(Number(route.params.id), updateData)
       if (response.code === 200) {
@@ -174,7 +186,8 @@ const handleSubmit = async () => {
         desc: form.value.desc,
         content: form.value.content,
         state: form.value.state,
-        created_by: form.value.created_by
+        created_by: form.value.created_by,
+        cover_image_url: form.value.cover_image_url
       }
       const response = await articleApi.create(createData)
       if (response.code === 200) {

@@ -146,6 +146,8 @@ const tags = ref<Tag[]>([])
 const showCreateModal = ref(false)
 const editingTag = ref<Tag | null>(null)
 
+console.log('==>>>', authStore.username)
+
 const form = ref({
   name: '',
   state: 1,
