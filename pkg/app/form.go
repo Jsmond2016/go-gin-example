@@ -1,27 +1,47 @@
 package app
 
 import (
-	"github.com/astaxie/beego/validation"
-	"github.com/gin-gonic/gin"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+
 	"github.com/EDDYCJY/go-gin-example/pkg/e"
+	"github.com/EDDYCJY/go-gin-example/pkg/logging"
 )
+
+var validate *validator.Validate
+
+func init() {
+	validate = validator.New()
+	// 注册自定义验证器
+	validate.RegisterValidation("is-valid-state", validateState)
+}
+
+// validateState 验证状态值是否有效
+func validateState(fl validator.FieldLevel) bool {
+	state := fl.Field().Int()
+	return state == 0 || state == 1
+}
 
 // BindAndValid binds and validates data
 func BindAndValid(c *gin.Context, form interface{}) (int, int) {
-	err := c.Bind(form)
+	err := c.ShouldBind(form)
 	if err != nil {
+		logging.Error("ShouldBind error: %v", err)
 		return http.StatusBadRequest, e.INVALID_PARAMS
 	}
 
-	valid := validation.Validation{}
-	check, err := valid.Valid(form)
+	err = validate.Struct(form)
 	if err != nil {
-		return http.StatusInternalServerError, e.ERROR
-	}
-	if !check {
-		MarkErrors(valid.Errors)
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			logging.Error("InvalidValidationError: %v", err)
+			return http.StatusInternalServerError, e.ERROR
+		}
+
+		for _, err := range err.(validator.ValidationErrors) {
+			logging.Error("ValidationError: %v", err)
+		}
 		return http.StatusBadRequest, e.INVALID_PARAMS
 	}
 

@@ -2,16 +2,18 @@ package article_service
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/EDDYCJY/go-gin-example/models"
 	"github.com/EDDYCJY/go-gin-example/pkg/gredis"
 	"github.com/EDDYCJY/go-gin-example/pkg/logging"
+	"github.com/EDDYCJY/go-gin-example/pkg/setting"
 	"github.com/EDDYCJY/go-gin-example/service/cache_service"
 )
 
 type Article struct {
-	ID            int
-	TagID         int
+	ID            uint
+	TagID         uint
 	Title         string
 	Desc          string
 	Content       string
@@ -118,19 +120,23 @@ func (a *Article) ExistByID() (bool, error) {
 	return models.ExistArticleByID(a.ID)
 }
 
-func (a *Article) Count() (int, error) {
+func (a *Article) Count() (int64, error) {
 	return models.GetArticleTotal(a.getMaps())
 }
 
 func (a *Article) getMaps() map[string]interface{} {
 	maps := make(map[string]interface{})
-	maps["deleted_on"] = 0
 	if a.State != -1 {
 		maps["state"] = a.State
 	}
-	if a.TagID != -1 {
+	if a.TagID != 0 {
 		maps["tag_id"] = a.TagID
 	}
 
 	return maps
+}
+
+// GetQrCodeUrl returns the QR code URL for the article
+func (a *Article) GetQrCodeUrl() string {
+	return fmt.Sprintf("%s/api/v1/articles/%d", setting.AppSetting.PrefixUrl, a.ID)
 }

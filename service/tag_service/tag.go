@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/360EntSecGroup-Skylar/excelize"
-	"github.com/tealeg/xlsx"
+	"github.com/xuri/excelize/v2"
 
 	"github.com/EDDYCJY/go-gin-example/models"
 	"github.com/EDDYCJY/go-gin-example/pkg/export"
@@ -18,7 +17,7 @@ import (
 )
 
 type Tag struct {
-	ID         int
+	ID         uint
 	Name       string
 	CreatedBy  string
 	ModifiedBy string
@@ -55,7 +54,7 @@ func (t *Tag) Delete() error {
 	return models.DeleteTag(t.ID)
 }
 
-func (t *Tag) Count() (int, error) {
+func (t *Tag) Count() (int64, error) {
 	return models.GetTagTotal(t.getMaps())
 }
 
@@ -96,39 +95,40 @@ func (t *Tag) Export() (string, error) {
 		return "", err
 	}
 
-	xlsFile := xlsx.NewFile()
-	sheet, err := xlsFile.AddSheet("标签信息")
-	if err != nil {
-		return "", err
-	}
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			logging.Error(err)
+		}
+	}()
+
+	sheet := "标签信息"
+	f.NewSheet(sheet)
 
 	titles := []string{"ID", "名称", "创建人", "创建时间", "修改人", "修改时间"}
-	row := sheet.AddRow()
-
-	var cell *xlsx.Cell
-	for _, title := range titles {
-		cell = row.AddCell()
-		cell.Value = title
+	for i, title := range titles {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, title)
 	}
 
-	for _, v := range tags {
-		values := []string{
-			strconv.Itoa(v.ID),
+	for i, v := range tags {
+		row := i + 2
+		values := []interface{}{
+			v.ID,
 			v.Name,
 			v.CreatedBy,
-			strconv.Itoa(v.CreatedOn),
+			v.CreatedAt.Unix(),
 			v.ModifiedBy,
-			strconv.Itoa(v.ModifiedOn),
+			v.UpdatedAt.Unix(),
 		}
 
-		row = sheet.AddRow()
-		for _, value := range values {
-			cell = row.AddCell()
-			cell.Value = value
+		for j, value := range values {
+			cell, _ := excelize.CoordinatesToCellName(j+1, row)
+			f.SetCellValue(sheet, cell, value)
 		}
 	}
 
-	time := strconv.Itoa(int(time.Now().Unix()))
+	time := strconv.FormatInt(time.Now().Unix(), 10)
 	filename := "tags-" + time + export.EXT
 
 	dirFullPath := export.GetExcelFullPath()
@@ -137,7 +137,7 @@ func (t *Tag) Export() (string, error) {
 		return "", err
 	}
 
-	err = xlsFile.Save(dirFullPath + filename)
+	err = f.SaveAs(dirFullPath + filename)
 	if err != nil {
 		return "", err
 	}
@@ -146,20 +146,24 @@ func (t *Tag) Export() (string, error) {
 }
 
 func (t *Tag) Import(r io.Reader) error {
-	xlsx, err := excelize.OpenReader(r)
+	f, err := excelize.OpenReader(r)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			logging.Error(err)
+		}
+	}()
+
+	rows, err := f.GetRows("标签信息")
 	if err != nil {
 		return err
 	}
 
-	rows := xlsx.GetRows("标签信息")
-	for irow, row := range rows {
-		if irow > 0 {
-			var data []string
-			for _, cell := range row {
-				data = append(data, cell)
-			}
-
-			models.AddTag(data[1], 1, data[2])
+	for i, row := range rows {
+		if i > 0 && len(row) >= 3 {
+			models.AddTag(row[1], 1, row[2])
 		}
 	}
 
@@ -168,7 +172,6 @@ func (t *Tag) Import(r io.Reader) error {
 
 func (t *Tag) getMaps() map[string]interface{} {
 	maps := make(map[string]interface{})
-	maps["deleted_on"] = 0
 
 	if t.Name != "" {
 		maps["name"] = t.Name

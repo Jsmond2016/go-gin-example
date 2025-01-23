@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 
-	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 
 	"github.com/EDDYCJY/go-gin-example/pkg/app"
@@ -13,34 +12,28 @@ import (
 )
 
 type auth struct {
-	Username string `valid:"Required; MaxSize(50)"`
-	Password string `valid:"Required; MaxSize(50)"`
+	Username string `form:"username" binding:"required,max=50"`
+	Password string `form:"password" binding:"required,max=50"`
 }
 
 // @Summary Get Auth
 // @Produce  json
-// @Param username query string true "userName"
-// @Param password query string true "password"
+// @Param username body string true "userName"
+// @Param password body string true "password"
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
-// @Router /auth [get]
+// @Router /auth [post]
 func GetAuth(c *gin.Context) {
 	appG := app.Gin{C: c}
-	valid := validation.Validation{}
+	var a auth
 
-	username := c.PostForm("username")
-	password := c.PostForm("password")
-
-	a := auth{Username: username, Password: password}
-	ok, _ := valid.Valid(&a)
-
-	if !ok {
-		app.MarkErrors(valid.Errors)
-		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+	httpCode, errCode := app.BindAndValid(c, &a)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
 		return
 	}
 
-	authService := auth_service.Auth{Username: username, Password: password}
+	authService := auth_service.Auth{Username: a.Username, Password: a.Password}
 	isExist, err := authService.Check()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
@@ -52,7 +45,7 @@ func GetAuth(c *gin.Context) {
 		return
 	}
 
-	token, err := util.GenerateToken(username, password)
+	token, err := util.GenerateToken(a.Username, a.Password)
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_AUTH_TOKEN, nil)
 		return

@@ -2,85 +2,109 @@ package logging
 
 import (
 	"fmt"
-	"github.com/EDDYCJY/go-gin-example/pkg/file"
-	"log"
-	"os"
 	"path/filepath"
-	"runtime"
+	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
+
+	"github.com/EDDYCJY/go-gin-example/pkg/file"
+	"github.com/EDDYCJY/go-gin-example/pkg/setting"
 )
 
-type Level int
-
-var (
-	F *os.File
-
-	DefaultPrefix      = ""
-	DefaultCallerDepth = 2
-
-	logger     *log.Logger
-	logPrefix  = ""
-	levelFlags = []string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}
-)
-
-const (
-	DEBUG Level = iota
-	INFO
-	WARNING
-	ERROR
-	FATAL
-)
+var logger *zap.Logger
 
 // Setup initialize the log instance
 func Setup() {
-	var err error
-	filePath := getLogFilePath()
+	logPath := getLogFilePath()
 	fileName := getLogFileName()
-	F, err = file.MustOpen(fileName, filePath)
-	if err != nil {
-		log.Fatalf("logging.Setup err: %v", err)
+	filePath := filepath.Join(logPath, fileName)
+
+	// 确保日志目录存在
+	if err := file.IsNotExistMkDir(logPath); err != nil {
+		panic(fmt.Sprintf("create log directory '%s' failed: %v", logPath, err))
 	}
 
-	logger = log.New(F, DefaultPrefix, log.LstdFlags)
+	// 日志轮转配置
+	hook := &lumberjack.Logger{
+		Filename:   filePath, // 日志文件路径
+		MaxSize:    500,      // 每个日志文件保存的最大尺寸 单位：M
+		MaxBackups: 3,        // 日志文件最多保存多少个备份
+		MaxAge:     28,       // 文件最多保存多少天
+		Compress:   true,     // 是否压缩
+	}
+	writeSyncer := zapcore.AddSync(hook)
+
+	// 编码器配置
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     timeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+
+	// 设置日志级别
+	atomicLevel := zap.NewAtomicLevel()
+	if setting.ServerSetting.RunMode == "debug" {
+		atomicLevel.SetLevel(zap.DebugLevel)
+	} else {
+		atomicLevel.SetLevel(zap.InfoLevel)
+	}
+
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig), // 编码器配置
+		writeSyncer,                           // 打印到文件
+		atomicLevel,                           // 日志级别
+	)
+
+	// 开启开发模式，堆栈跟踪
+	caller := zap.AddCaller()
+	// 开启文件及行号
+	development := zap.Development()
+	// 设置初始化字段
+	filed := zap.Fields(zap.String("serviceName", "go-gin-example"))
+	// 构造日志
+	logger = zap.New(core, caller, development, filed)
+}
+
+func timeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(t.Format("2006-01-02 15:04:05.000"))
 }
 
 // Debug output logs at debug level
 func Debug(v ...interface{}) {
-	setPrefix(DEBUG)
-	logger.Println(v)
+	logger.Sugar().Debug(v...)
 }
 
 // Info output logs at info level
 func Info(v ...interface{}) {
-	setPrefix(INFO)
-	logger.Println(v)
+	logger.Sugar().Info(v...)
 }
 
 // Warn output logs at warn level
 func Warn(v ...interface{}) {
-	setPrefix(WARNING)
-	logger.Println(v)
+	logger.Sugar().Warn(v...)
 }
 
 // Error output logs at error level
 func Error(v ...interface{}) {
-	setPrefix(ERROR)
-	logger.Println(v)
+	logger.Sugar().Error(v...)
 }
 
 // Fatal output logs at fatal level
 func Fatal(v ...interface{}) {
-	setPrefix(FATAL)
-	logger.Fatalln(v)
+	logger.Sugar().Fatal(v...)
 }
 
-// setPrefix set the prefix of the log output
-func setPrefix(level Level) {
-	_, file, line, ok := runtime.Caller(DefaultCallerDepth)
-	if ok {
-		logPrefix = fmt.Sprintf("[%s][%s:%d]", levelFlags[level], filepath.Base(file), line)
-	} else {
-		logPrefix = fmt.Sprintf("[%s]", levelFlags[level])
-	}
-
-	logger.SetPrefix(logPrefix)
+// Close flushes any buffered log entries
+func Close() error {
+	return logger.Sync()
 }

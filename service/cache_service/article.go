@@ -8,8 +8,8 @@ import (
 )
 
 type Article struct {
-	ID    int
-	TagID int
+	ID    uint
+	TagID uint
 	State int
 
 	PageNum  int
@@ -17,7 +17,7 @@ type Article struct {
 }
 
 func (a *Article) GetArticleKey() string {
-	return e.CACHE_ARTICLE + "_" + strconv.Itoa(a.ID)
+	return e.CACHE_ARTICLE + "_" + strconv.FormatUint(uint64(a.ID), 10)
 }
 
 func (a *Article) GetArticlesKey() string {
@@ -27,10 +27,10 @@ func (a *Article) GetArticlesKey() string {
 	}
 
 	if a.ID > 0 {
-		keys = append(keys, strconv.Itoa(a.ID))
+		keys = append(keys, strconv.FormatUint(uint64(a.ID), 10))
 	}
 	if a.TagID > 0 {
-		keys = append(keys, strconv.Itoa(a.TagID))
+		keys = append(keys, strconv.FormatUint(uint64(a.TagID), 10))
 	}
 	if a.State >= 0 {
 		keys = append(keys, strconv.Itoa(a.State))

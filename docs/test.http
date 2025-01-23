@@ -1,0 +1,104 @@
+@baseUrl = http://127.0.0.1:8000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2IiwicGFzc3dvcmQiOiJjYzAzZTc0N2E2YWZiYmNiZjhiZTc2NjhhY2ZlYmVlNSIsImlzcyI6Imdpbi1ibG9nIiwiZXhwIjoxNzM3NjE0Nzk1LCJuYmYiOjE3Mzc2MDM5OTUsImlhdCI6MTczNzYwMzk5NX0.SSPW8ezEGWAh93d-hZG63t519t-JHP10Rh1He_3Socs
+
+
+### 获取认证 token
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+    "username": "test",
+    "password": "test123"
+}
+
+### 获取标签列表
+GET {{baseUrl}}/api/v1/tags?name=test&state=1
+Authorization: {{token}}
+
+### 新增标签
+POST {{baseUrl}}/api/v1/tags
+Content-Type: application/json
+Authorization: {{token}}
+
+
+{
+    "name": "test",
+    "state": 1,
+    "created_by": 1
+}
+
+### 更新标签
+PUT {{baseUrl}}/api/v1/tags/1
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+    "name": "test-update",
+    "state": 1,
+    "modified_by": "admin"
+}
+
+### 删除标签
+DELETE {{baseUrl}}/api/v1/tags/1
+Authorization: {{token}}
+
+### 导出标签
+POST {{baseUrl}}/api/v1/tags/export
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+    "name": "test",
+    "state": 1
+}
+
+### 导入标签
+POST {{baseUrl}}/api/v1/tags/import
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="test.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./test.xlsx
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 获取文章列表
+GET {{baseUrl}}/api/v1/articles
+Authorization: {{token}}
+
+### 获取单个文章
+GET {{baseUrl}}/api/v1/articles/1
+Authorization: {{token}}
+
+### 新增文章
+POST {{baseUrl}}/api/v1/articles
+Content-Type: application/json
+Authorization: {{token}}
+{
+    "tag_id": 1,
+    "title": "测试文章",
+    "desc": "这是一篇测试文章",
+    "content": "文章内容",
+    "created_by": "admin",
+    "state": 1
+}
+
+### 更新文章
+PUT {{baseUrl}}/api/v1/articles/1
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+    "tag_id": "1",
+    "title": "更新后的文章",
+    "desc": "更新后的描述",
+    "content": "更新后的内容",
+    "modified_by": "admin",
+    "state": 1
+}
+
+### 删除文章
+DELETE {{baseUrl}}/api/v1/articles/1
+Authorization: {{token}}
+

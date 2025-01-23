@@ -8,7 +8,7 @@ import (
 )
 
 type Tag struct {
-	ID    int
+	ID    uint
 	Name  string
 	State int
 
@@ -22,6 +22,9 @@ func (t *Tag) GetTagsKey() string {
 		"LIST",
 	}
 
+	if t.ID > 0 {
+		keys = append(keys, strconv.FormatUint(uint64(t.ID), 10))
+	}
 	if t.Name != "" {
 		keys = append(keys, t.Name)
 	}

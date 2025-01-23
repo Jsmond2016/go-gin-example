@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -11,8 +16,8 @@ import (
 	"github.com/EDDYCJY/go-gin-example/pkg/gredis"
 	"github.com/EDDYCJY/go-gin-example/pkg/logging"
 	"github.com/EDDYCJY/go-gin-example/pkg/setting"
-	"github.com/EDDYCJY/go-gin-example/routers"
 	"github.com/EDDYCJY/go-gin-example/pkg/util"
+	"github.com/EDDYCJY/go-gin-example/routers"
 )
 
 func init() {
@@ -32,7 +37,7 @@ func init() {
 func main() {
 	gin.SetMode(setting.ServerSetting.RunMode)
 
-	routersInit := routers.InitRouter()
+	router := routers.InitRouter()
 	readTimeout := setting.ServerSetting.ReadTimeout
 	writeTimeout := setting.ServerSetting.WriteTimeout
 	endPoint := fmt.Sprintf(":%d", setting.ServerSetting.HttpPort)
@@ -40,27 +45,31 @@ func main() {
 
 	server := &http.Server{
 		Addr:           endPoint,
-		Handler:        routersInit,
+		Handler:        router,
 		ReadTimeout:    readTimeout,
 		WriteTimeout:   writeTimeout,
 		MaxHeaderBytes: maxHeaderBytes,
 	}
 
-	log.Printf("[info] start http server listening %s", endPoint)
+	// 启动服务器在 goroutine 中
+	go func() {
+		log.Printf("[info] start http server listening %s", endPoint)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
 
-	server.ListenAndServe()
+	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
 
-	// If you want Graceful Restart, you need a Unix system and download github.com/fvbock/endless
-	//endless.DefaultReadTimeOut = readTimeout
-	//endless.DefaultWriteTimeOut = writeTimeout
-	//endless.DefaultMaxHeaderBytes = maxHeaderBytes
-	//server := endless.NewServer(endPoint, routersInit)
-	//server.BeforeBegin = func(add string) {
-	//	log.Printf("Actual pid is %d", syscall.Getpid())
-	//}
-	//
-	//err := server.ListenAndServe()
-	//if err != nil {
-	//	log.Printf("Server err: %v", err)
-	//}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
+
+	log.Println("Server exiting")
 }

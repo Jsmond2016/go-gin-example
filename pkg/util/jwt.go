@@ -3,7 +3,7 @@ package util
 import (
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var jwtSecret []byte
@@ -11,7 +11,7 @@ var jwtSecret []byte
 type Claims struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // GenerateToken generate tokens used for auth
@@ -22,16 +22,16 @@ func GenerateToken(username, password string) (string, error) {
 	claims := Claims{
 		EncodeMD5(username),
 		EncodeMD5(password),
-		jwt.StandardClaims{
-			ExpiresAt: expireTime.Unix(),
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expireTime),
+			IssuedAt:  jwt.NewNumericDate(nowTime),
+			NotBefore: jwt.NewNumericDate(nowTime),
 			Issuer:    "gin-blog",
 		},
 	}
 
-	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err := tokenClaims.SignedString(jwtSecret)
-
-	return token, err
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecret)
 }
 
 // ParseToken parsing token
@@ -40,11 +40,17 @@ func ParseToken(token string) (*Claims, error) {
 		return jwtSecret, nil
 	})
 
-	if tokenClaims != nil {
-		if claims, ok := tokenClaims.Claims.(*Claims); ok && tokenClaims.Valid {
-			return claims, nil
-		}
+	if err == jwt.ErrTokenExpired || err == jwt.ErrInvalidKey {
+		return nil, err
 	}
 
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := tokenClaims.Claims.(*Claims); ok && tokenClaims.Valid {
+		return claims, nil
+	}
+
+	return nil, jwt.ErrInvalidKey
 }

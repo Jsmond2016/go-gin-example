@@ -3,9 +3,8 @@ package v1
 import (
 	"net/http"
 
-	"github.com/unknwon/com"
-	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
+	"github.com/unknwon/com"
 
 	"github.com/EDDYCJY/go-gin-example/pkg/app"
 	"github.com/EDDYCJY/go-gin-example/pkg/e"
@@ -56,9 +55,9 @@ func GetTags(c *gin.Context) {
 }
 
 type AddTagForm struct {
-	Name      string `form:"name" valid:"Required;MaxSize(100)"`
-	CreatedBy string `form:"created_by" valid:"Required;MaxSize(100)"`
-	State     int    `form:"state" valid:"Range(0,1)"`
+	Name      string `form:"name" binding:"required,max=100"`
+	CreatedBy string `form:"created_by" binding:"required,max=100"`
+	State     int    `form:"state" binding:"required,is-valid-state"`
 }
 
 // @Summary Add article tag
@@ -106,10 +105,10 @@ func AddTag(c *gin.Context) {
 }
 
 type EditTagForm struct {
-	ID         int    `form:"id" valid:"Required;Min(1)"`
-	Name       string `form:"name" valid:"Required;MaxSize(100)"`
-	ModifiedBy string `form:"modified_by" valid:"Required;MaxSize(100)"`
-	State      int    `form:"state" valid:"Range(0,1)"`
+	ID         uint   `form:"id" binding:"required,min=1"`
+	Name       string `form:"name" binding:"required,max=100"`
+	ModifiedBy string `form:"modified_by" binding:"required,max=100"`
+	State      int    `form:"state" binding:"required,is-valid-state"`
 }
 
 // @Summary Update article tag
@@ -124,7 +123,7 @@ type EditTagForm struct {
 func EditTag(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
-		form = EditTagForm{ID: com.StrTo(c.Param("id")).MustInt()}
+		form = EditTagForm{ID: uint(com.StrTo(c.Param("id")).MustInt())}
 	)
 
 	httpCode, errCode := app.BindAndValid(c, &form)
@@ -168,13 +167,10 @@ func EditTag(c *gin.Context) {
 // @Router /api/v1/tags/{id} [delete]
 func DeleteTag(c *gin.Context) {
 	appG := app.Gin{C: c}
-	valid := validation.Validation{}
-	id := com.StrTo(c.Param("id")).MustInt()
-	valid.Min(id, 1, "id").Message("ID必须大于0")
-
-	if valid.HasErrors() {
-		app.MarkErrors(valid.Errors)
+	id := uint(com.StrTo(c.Param("id")).MustInt())
+	if id < 1 {
 		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
 	}
 
 	tagService := tag_service.Tag{ID: id}

@@ -3,10 +3,9 @@ package v1
 import (
 	"net/http"
 
-	"github.com/unknwon/com"
-	"github.com/astaxie/beego/validation"
 	"github.com/boombuler/barcode/qr"
 	"github.com/gin-gonic/gin"
+	"github.com/unknwon/com"
 
 	"github.com/EDDYCJY/go-gin-example/pkg/app"
 	"github.com/EDDYCJY/go-gin-example/pkg/e"
@@ -25,12 +24,8 @@ import (
 // @Router /api/v1/articles/{id} [get]
 func GetArticle(c *gin.Context) {
 	appG := app.Gin{C: c}
-	id := com.StrTo(c.Param("id")).MustInt()
-	valid := validation.Validation{}
-	valid.Min(id, 1, "id")
-
-	if valid.HasErrors() {
-		app.MarkErrors(valid.Errors)
+	id := uint(com.StrTo(c.Param("id")).MustInt())
+	if id < 1 {
 		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
@@ -65,28 +60,27 @@ func GetArticle(c *gin.Context) {
 // @Router /api/v1/articles [get]
 func GetArticles(c *gin.Context) {
 	appG := app.Gin{C: c}
-	valid := validation.Validation{}
 
 	state := -1
 	if arg := c.PostForm("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
-		valid.Range(state, 0, 1, "state")
+		if state < 0 || state > 1 {
+			appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+			return
+		}
 	}
 
 	tagId := -1
 	if arg := c.PostForm("tag_id"); arg != "" {
 		tagId = com.StrTo(arg).MustInt()
-		valid.Min(tagId, 1, "tag_id")
-	}
-
-	if valid.HasErrors() {
-		app.MarkErrors(valid.Errors)
-		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
-		return
+		if tagId < 1 {
+			appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+			return
+		}
 	}
 
 	articleService := article_service.Article{
-		TagID:    tagId,
+		TagID:    uint(tagId),
 		State:    state,
 		PageNum:  util.GetPage(c),
 		PageSize: setting.AppSetting.PageSize,
@@ -112,13 +106,13 @@ func GetArticles(c *gin.Context) {
 }
 
 type AddArticleForm struct {
-	TagID         int    `form:"tag_id" valid:"Required;Min(1)"`
-	Title         string `form:"title" valid:"Required;MaxSize(100)"`
-	Desc          string `form:"desc" valid:"Required;MaxSize(255)"`
-	Content       string `form:"content" valid:"Required;MaxSize(65535)"`
-	CreatedBy     string `form:"created_by" valid:"Required;MaxSize(100)"`
-	CoverImageUrl string `form:"cover_image_url" valid:"Required;MaxSize(255)"`
-	State         int    `form:"state" valid:"Range(0,1)"`
+	TagID         uint   `form:"tag_id" binding:"required,min=1"`
+	Title         string `form:"title" binding:"required,max=100"`
+	Desc          string `form:"desc" binding:"required,max=255"`
+	Content       string `form:"content" binding:"required,max=65535"`
+	CreatedBy     string `form:"created_by" binding:"required,max=100"`
+	CoverImageUrl string `form:"cover_image_url" binding:"required,max=255"`
+	State         int    `form:"state" binding:"required,is-valid-state"`
 }
 
 // @Summary Add article
@@ -174,14 +168,14 @@ func AddArticle(c *gin.Context) {
 }
 
 type EditArticleForm struct {
-	ID            int    `form:"id" valid:"Required;Min(1)"`
-	TagID         int    `form:"tag_id" valid:"Required;Min(1)"`
-	Title         string `form:"title" valid:"Required;MaxSize(100)"`
-	Desc          string `form:"desc" valid:"Required;MaxSize(255)"`
-	Content       string `form:"content" valid:"Required;MaxSize(65535)"`
-	ModifiedBy    string `form:"modified_by" valid:"Required;MaxSize(100)"`
-	CoverImageUrl string `form:"cover_image_url" valid:"Required;MaxSize(255)"`
-	State         int    `form:"state" valid:"Range(0,1)"`
+	ID            uint   `form:"id" binding:"required,min=1"`
+	TagID         uint   `form:"tag_id" binding:"required,min=1"`
+	Title         string `form:"title" binding:"required,max=100"`
+	Desc          string `form:"desc" binding:"required,max=255"`
+	Content       string `form:"content" binding:"required,max=65535"`
+	ModifiedBy    string `form:"modified_by" binding:"required,max=100"`
+	CoverImageUrl string `form:"cover_image_url" binding:"required,max=255"`
+	State         int    `form:"state" binding:"required,is-valid-state"`
 }
 
 // @Summary Update article
@@ -199,7 +193,7 @@ type EditArticleForm struct {
 func EditArticle(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
-		form = EditArticleForm{ID: com.StrTo(c.Param("id")).MustInt()}
+		form = EditArticleForm{ID: uint(com.StrTo(c.Param("id")).MustInt())}
 	)
 
 	httpCode, errCode := app.BindAndValid(c, &form)
@@ -257,13 +251,9 @@ func EditArticle(c *gin.Context) {
 // @Router /api/v1/articles/{id} [delete]
 func DeleteArticle(c *gin.Context) {
 	appG := app.Gin{C: c}
-	valid := validation.Validation{}
-	id := com.StrTo(c.Param("id")).MustInt()
-	valid.Min(id, 1, "id").Message("ID必须大于0")
-
-	if valid.HasErrors() {
-		app.MarkErrors(valid.Errors)
-		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+	id := uint(com.StrTo(c.Param("id")).MustInt())
+	if id < 1 {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -287,14 +277,17 @@ func DeleteArticle(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
 
-const (
-	QRCODE_URL = "https://github.com/EDDYCJY/blog#gin%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95"
-)
-
+// @Summary Generate article poster
+// @Produce  json
+// @Param article_id path int true "ArticleID"
+// @Success 200 {object} app.Response
+// @Failure 500 {object} app.Response
+// @Router /api/v1/articles/poster/generate [post]
 func GenerateArticlePoster(c *gin.Context) {
 	appG := app.Gin{C: c}
-	article := &article_service.Article{}
-	qr := qrcode.NewQrCode(QRCODE_URL, 300, 300, qr.M, qr.Auto)
+	articleID := uint(com.StrTo(c.Param("article_id")).MustInt())
+	article := &article_service.Article{ID: articleID}
+	qr := qrcode.NewQrCode(article.GetQrCodeUrl(), 300, 300, qr.M, qr.Auto)
 	posterName := article_service.GetPosterFlag() + "-" + qrcode.GetQrCodeFileName(qr.URL) + qr.GetQrCodeExt()
 	articlePoster := article_service.NewArticlePoster(posterName, article, qr)
 	articlePosterBgService := article_service.NewArticlePosterBg(

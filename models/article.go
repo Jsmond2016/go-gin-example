@@ -1,14 +1,10 @@
 package models
 
-import (
-	"github.com/jinzhu/gorm"
-)
-
 type Article struct {
 	Model
 
-	TagID int `json:"tag_id" gorm:"index"`
-	Tag   Tag `json:"tag"`
+	TagID uint `json:"tag_id" gorm:"index"`
+	Tag   Tag  `json:"tag"`
 
 	Title         string `json:"title"`
 	Desc          string `json:"desc"`
@@ -20,35 +16,36 @@ type Article struct {
 }
 
 // ExistArticleByID checks if an article exists based on ID
-func ExistArticleByID(id int) (bool, error) {
+func ExistArticleByID(id uint) (bool, error) {
 	var article Article
-	err := db.Select("id").Where("id = ? AND deleted_on = ? ", id, 0).First(&article).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
+	err := db.Select("id").Where("id = ?", id).First(&article).Error
+	if err != nil {
 		return false, err
 	}
-
-	if article.ID > 0 {
-		return true, nil
-	}
-
-	return false, nil
+	return true, nil
 }
 
 // GetArticleTotal gets the total number of articles based on the constraints
-func GetArticleTotal(maps interface{}) (int, error) {
-	var count int
-	if err := db.Model(&Article{}).Where(maps).Count(&count).Error; err != nil {
+func GetArticleTotal(maps interface{}) (int64, error) {
+	var count int64
+	err := db.Model(&Article{}).Where(maps).Count(&count).Error
+	if err != nil {
 		return 0, err
 	}
-
 	return count, nil
 }
 
 // GetArticles gets a list of articles based on paging constraints
 func GetArticles(pageNum int, pageSize int, maps interface{}) ([]*Article, error) {
 	var articles []*Article
-	err := db.Preload("Tag").Where(maps).Offset(pageNum).Limit(pageSize).Find(&articles).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
+	query := db.Model(&Article{}).Preload("Tag").Where(maps)
+
+	if pageSize > 0 && pageNum > 0 {
+		query = query.Offset((pageNum - 1) * pageSize).Limit(pageSize)
+	}
+
+	err := query.Find(&articles).Error
+	if err != nil {
 		return nil, err
 	}
 
@@ -56,34 +53,24 @@ func GetArticles(pageNum int, pageSize int, maps interface{}) ([]*Article, error
 }
 
 // GetArticle Get a single article based on ID
-func GetArticle(id int) (*Article, error) {
+func GetArticle(id uint) (*Article, error) {
 	var article Article
-	err := db.Where("id = ? AND deleted_on = ? ", id, 0).First(&article).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
+	err := db.Where("id = ?", id).Preload("Tag").First(&article).Error
+	if err != nil {
 		return nil, err
 	}
-
-	err = db.Model(&article).Related(&article.Tag).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-
 	return &article, nil
 }
 
 // EditArticle modify a single article
-func EditArticle(id int, data interface{}) error {
-	if err := db.Model(&Article{}).Where("id = ? AND deleted_on = ? ", id, 0).Updates(data).Error; err != nil {
-		return err
-	}
-
-	return nil
+func EditArticle(id uint, data interface{}) error {
+	return db.Model(&Article{}).Where("id = ?", id).Updates(data).Error
 }
 
 // AddArticle add a single article
 func AddArticle(data map[string]interface{}) error {
 	article := Article{
-		TagID:         data["tag_id"].(int),
+		TagID:         uint(data["tag_id"].(int)),
 		Title:         data["title"].(string),
 		Desc:          data["desc"].(string),
 		Content:       data["content"].(string),
@@ -91,27 +78,15 @@ func AddArticle(data map[string]interface{}) error {
 		State:         data["state"].(int),
 		CoverImageUrl: data["cover_image_url"].(string),
 	}
-	if err := db.Create(&article).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return db.Create(&article).Error
 }
 
 // DeleteArticle delete a single article
-func DeleteArticle(id int) error {
-	if err := db.Where("id = ?", id).Delete(Article{}).Error; err != nil {
-		return err
-	}
-
-	return nil
+func DeleteArticle(id uint) error {
+	return db.Where("id = ?", id).Delete(&Article{}).Error
 }
 
-// CleanAllArticle clear all article
+// CleanAllArticle clear all soft deleted articles
 func CleanAllArticle() error {
-	if err := db.Unscoped().Where("deleted_on != ? ", 0).Delete(&Article{}).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return db.Unscoped().Where("deleted_at IS NOT NULL").Delete(&Article{}).Error
 }
