@@ -8,38 +8,36 @@ const api = axios.create({
   }
 })
 
-// 请求拦截器
+// 请求拦截器：添加 token
 api.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+     if (token) {
+       config.headers['Authorization'] = `Bearer ${token}`
     }
     return config
   },
-  (error) => {
+  error => {
     return Promise.reject(error)
   }
 )
 
-// 响应拦截器
+// 响应拦截器：处理 token 过期等情况
 api.interceptors.response.use(
-  (response) => {
+  response => {
     return response.data
   },
-  (error) => {
-    if (error.response) {
-      switch (error.response.status) {
-        case 401:
-          // 处理未授权
-          localStorage.removeItem('token')
-          window.location.href = '/login'
-          break
-        case 500:
-          // 处理服务器错误
-          console.error('Server Error')
-          break
-      }
+  error => {
+    switch (error.response?.status) {
+      case 401:
+        // 处理未授权
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+        break
+      case 500:
+        // 处理服务器错误
+        console.error('Server Error')
+        break
     }
     return Promise.reject(error)
   }

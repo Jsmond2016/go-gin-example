@@ -1,6 +1,4 @@
 import api from './config'
-import type { AxiosResponse } from 'axios'
-
 // 接口返回类型
 interface ApiResponse<T = any> {
   code: number
@@ -10,8 +8,9 @@ interface ApiResponse<T = any> {
 
 // Auth
 export const auth = {
-  login: (username: string, password: string): Promise<ApiResponse> =>
-    api.post('/auth', {  username, password   })
+  login:  (username: string, password: string): Promise<ApiResponse> => {
+   return api.post('/api/v1/auth', { username, password })
+  }
 }
 
 // Articles

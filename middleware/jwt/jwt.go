@@ -1,7 +1,9 @@
 package jwt
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -16,7 +18,9 @@ func JWT() gin.HandlerFunc {
 		var data interface{}
 
 		code = e.SUCCESS
-		token := c.Query("token")
+		tokenStr := c.GetHeader("Authorization")
+		token := strings.TrimPrefix(tokenStr, "Bearer ")
+		fmt.Println("token", token)
 		if token == "" {
 			code = e.INVALID_PARAMS
 		} else {
