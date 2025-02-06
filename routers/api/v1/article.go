@@ -106,7 +106,7 @@ func GetArticles(c *gin.Context) {
 	}
 
 	data := make(map[string]interface{})
-	data["lists"] = articles
+	data["list"] = articles
 	data["total"] = total
 
 	appG.Response(http.StatusOK, e.SUCCESS, data)

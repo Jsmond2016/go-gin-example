@@ -108,7 +108,7 @@ const fetchTags = async () => {
   try {
     const response = await tagApi.getList()
     if (response.code === 200) {
-      tags.value = response.data
+      tags.value = response.data.list
     }
   } catch (err) {
     console.error('Error fetching tags:', err)
@@ -126,7 +126,7 @@ const fetchArticle = async () => {
       form.value = {
         ...form.value,
         ...article,
-        tag_id: article.tag_id.toString()
+        tag_id: article.tag_id 
       }
     }
   } catch (err) {

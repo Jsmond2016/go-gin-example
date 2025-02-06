@@ -13,6 +13,6 @@ export interface ApiResponse<T = any> {
 }
 
 export interface ListResponse<T> {
-  lists: T[]
+  list: T[]
   total: number
 } 

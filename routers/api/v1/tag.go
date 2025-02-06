@@ -49,7 +49,7 @@ func GetTags(c *gin.Context) {
 	}
 
 	appG.Response(http.StatusOK, e.SUCCESS, map[string]interface{}{
-		"lists": tags,
+		"list":  tags,
 		"total": count,
 	})
 }

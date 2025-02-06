@@ -45,9 +45,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_by" label="创建者" width="120" />
-        <el-table-column prop="created_on" label="创建时间" width="180">
+        <el-table-column prop="created_at" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ new Date(row.created_on * 1000).toLocaleString() }}
+            {{ dayjs(row.created_at).format("YYYY-MM-DD HH:mm:ss") }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -126,6 +126,7 @@ import { ElMessage, ElMessageBox } from "element-plus"
 import { Delete, Edit } from "@element-plus/icons-vue"
 import { tags as tagApi } from "../../api/services"
 import { useAuthStore } from "../../stores/auth"
+import dayjs from 'dayjs'
 
 const authStore = useAuthStore()
 
@@ -174,7 +175,7 @@ const fetchTags = async () => {
       ...searchForm.value,
     })
     if (response.code === 200) {
-      tags.value = response.data.lists
+      tags.value = response.data.list
       total.value = response.data.total
     }
   } catch (err) {
