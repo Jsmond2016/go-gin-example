@@ -2,6 +2,12 @@
 
 An example of gin contains many useful features
 
+
+## 特别说明
+
+本项目基于 [go-gin-example](https://github.com/EDDYCJY/go-gin-example) 项目，并在此基础上进行修改和优化。增加了前端项目 `/frontend`, 优化了部分旧的 api， 优化了部分接口调用和 swagger 不匹配等问题；
+
+
 [简体中文](https://github.com/EDDYCJY/go-gin-example/blob/master/README_ZH.md)
 
 ## Installation
