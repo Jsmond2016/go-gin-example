@@ -17,7 +17,7 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item label="状态" style="width: 260px">
           <el-select
             v-model="searchForm.state"
             placeholder="选择状态"
@@ -27,7 +27,7 @@
             <el-option :value="0" label="禁用" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="width: 260px;">
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="resetSearch">重置</el-button>
         </el-form-item>
@@ -97,8 +97,11 @@
         <el-form-item label="名称" prop="name">
           <el-input v-model="editingTag.name" placeholder="请输入标签名称" />
         </el-form-item>
-        <el-form-item label="状态" prop="state">
-          <el-select v-model="editingTag.state" placeholder="请选择状态">
+        <el-form-item label="状态" prop="state" style="width: 260px;">
+          <el-select
+             v-model="editingTag.state"
+            placeholder="请选择状态"
+          >
             <el-option :value="1" label="启用" />
             <el-option :value="0" label="禁用" />
           </el-select>
@@ -126,7 +129,7 @@ import { ElMessage, ElMessageBox } from "element-plus"
 import { Delete, Edit } from "@element-plus/icons-vue"
 import { tags as tagApi } from "../../api/services"
 import { useAuthStore } from "../../stores/auth"
-import dayjs from 'dayjs'
+import dayjs from "dayjs"
 
 const authStore = useAuthStore()
 
@@ -247,7 +250,7 @@ const handleSubmit = async () => {
         created_by: authStore.username || "",
         // modified_by: authStore.username || "",
       })
-      
+
       if (response.code === 200) {
         ElMessage.success(editingTag.value.id ? "更新成功" : "创建成功")
         dialogVisible.value = false

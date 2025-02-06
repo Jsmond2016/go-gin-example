@@ -12,7 +12,7 @@
 
       <!-- 搜索区域 -->
       <el-form :inline="true" :model="searchForm" class="mb-4">
-        <el-form-item label="标签">
+        <el-form-item label="标签" style="width: 260px">
           <el-select
             v-model="searchForm.tag_id"
             placeholder="选择标签"
@@ -26,7 +26,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item label="状态" style="width: 260px">
           <el-select
             v-model="searchForm.state"
             placeholder="选择状态"
