@@ -59,7 +59,7 @@ func CheckImageSize(f multipart.File) bool {
 		return false
 	}
 
-	return size <= setting.AppSetting.ImageMaxSize
+	return size <= int64(setting.AppSetting.ImageMaxSize)
 }
 
 // CheckImage check if the file exists
