@@ -184,12 +184,12 @@ func AddArticle(c *gin.Context) {
 type EditArticleForm struct {
 	ID            int    `json:"id" binding:"required,min=1"`
 	TagID         int    `json:"tag_id" binding:"required,min=1"`
-	Title         string `json:"title"`
-	Desc          string `json:"desc"`
-	Content       string `json:"content"`
-	ModifiedBy    string `json:"modified_by"`
-	CoverImageUrl string `json:"cover_image_url"`
-	State         int    `json:"state"`
+	Title         string `json:"title" binding:"max=100"`
+	Desc          string `json:"desc" binding:"max=255"`
+	Content       string `json:"content" binding:"max=65535"`
+	ModifiedBy    string `json:"modified_by" binding:"required,max=100"`
+	CoverImageUrl string `json:"cover_image_url" binding:"omitempty,url"`
+	State         int    `json:"state" binding:"omitempty,is-valid-state"`
 }
 
 // @Summary Update article
@@ -206,8 +206,8 @@ func EditArticle(c *gin.Context) {
 		form = EditArticleForm{ID: com.StrTo(c.Param("id")).MustInt()}
 	)
 
-	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &form)
-	if errCode != e.SUCCESS {
+	// 使用统一的验证函数
+	if httpCode, errCode, errors := validateArticleForm(c, &form); errCode != e.SUCCESS {
 		appG.Response(httpCode, errCode, errors)
 		return
 	}
