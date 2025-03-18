@@ -1,11 +1,20 @@
+## 特别说明
+
+本项目基于 [go-gin-example](https://github.com/EDDYCJY/go-gin-example) 项目，并在此基础上进行修改和优化。
+
+- 更新项目依赖，更新使用最新稳定版的依赖；
+- 优化了部分旧的 api， 优化了部分接口调用和 swagger 不匹配等问题；
+- 增加了前端项目 `/frontend`, 进入 `/frontend` 项目后，使用 `pnpm install` 安装依赖，使用 `pnpm run dev` 启动项目；
+- 同时，给出了相关测试 http 例子，在目录 `/docs/test.http`，在 `vscode` 安装插件 `rest client` 即可使用；
+
+
+--- 
+
 # Go Gin Example [![rcard](https://goreportcard.com/badge/github.com/EDDYCJY/go-gin-example)](https://goreportcard.com/report/github.com/EDDYCJY/go-gin-example) [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/EDDYCJY/go-gin-example) [![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/EDDYCJY/go-gin-example/master/LICENSE)
 
 An example of gin contains many useful features
 
 
-## 特别说明
-
-本项目基于 [go-gin-example](https://github.com/EDDYCJY/go-gin-example) 项目，并在此基础上进行修改和优化。增加了前端项目 `/frontend`, 优化了部分旧的 api， 优化了部分接口调用和 swagger 不匹配等问题；
 
 
 [简体中文](https://github.com/EDDYCJY/go-gin-example/blob/master/README_ZH.md)
