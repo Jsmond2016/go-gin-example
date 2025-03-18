@@ -49,17 +49,21 @@ func ExistTagByID(id uint) (bool, error) {
 }
 
 // AddTag Add a Tag
-func AddTag(name string, state int, createdBy string) error {
+func AddTag(name string, state int, createdBy string) (uint, error) {
 	tag := Tag{
 		Name:      name,
 		State:     state,
 		CreatedBy: createdBy,
 	}
-	return db.Create(&tag).Error
+	err := db.Create(&tag).Error
+	if err != nil {
+		return 0, err
+	}
+	return tag.ID, nil
 }
 
 // AddTagTx 在事务中添加标签
-func AddTagTx(tx *gorm.DB, name string, state int, createdBy string) error {
+func AddTagTx(tx *gorm.DB, name string, state int, createdBy string) (uint, error) {
 	if tx == nil {
 		tx = db
 	}
@@ -69,7 +73,11 @@ func AddTagTx(tx *gorm.DB, name string, state int, createdBy string) error {
 		State:     state,
 		CreatedBy: createdBy,
 	}
-	return tx.Create(&tag).Error
+	err := tx.Create(&tag).Error
+	if err != nil {
+		return 0, err
+	}
+	return tag.ID, nil
 }
 
 // GetTags gets a list of tags based on paging and constraints
@@ -89,7 +97,9 @@ func GetTags(pageNum int, pageSize int, filter TagFilter) ([]Tag, error) {
 	if len(filter.IDs) > 0 {
 		query = query.Where("id IN ?", filter.IDs)
 	}
-
+	// 按照创建时间排列，最新的在前面
+	// 先排序，再分页
+	query = query.Order("created_at DESC").Order("id DESC")
 	// 分页
 	if pageSize > 0 && pageNum > 0 {
 		query = query.Offset((pageNum - 1) * pageSize).Limit(pageSize)

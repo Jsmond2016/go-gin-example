@@ -94,13 +94,15 @@ func AddTag(c *gin.Context) {
 		return
 	}
 
-	err = tagService.Add()
+	tagId, err := tagService.Create()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_ADD_TAG_FAIL, nil)
 		return
 	}
 
-	appG.Response(http.StatusOK, e.SUCCESS, nil)
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]uint{
+		"id": tagId,
+	})
 }
 
 type EditTagForm struct {
@@ -161,7 +163,7 @@ func EditTag(c *gin.Context) {
 		return
 	}
 
-	err = tagService.Edit()
+	err = tagService.Update()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_EDIT_TAG_FAIL, nil)
 		return

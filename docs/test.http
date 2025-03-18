@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### 获取标签列表
-GET {{baseUrl}}/api/v1/tags?name=123&state=1
+GET {{baseUrl}}/api/v1/tags?state=1
 Authorization: {{token}}
 
 ### Add new tag
@@ -21,7 +21,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "name": "test tag 0031111",
+    "name": "alan-tag-7",
     "created_by": "test",
     "state": 1
 }
