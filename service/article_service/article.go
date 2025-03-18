@@ -26,8 +26,9 @@ type Article struct {
 	PageSize int
 }
 
-func (a *Article) Add() error {
-	article := models.Article{
+// Create 创建文章
+func (a *Article) Create() error {
+	article := &models.Article{
 		TagID:         a.TagID,
 		Title:         a.Title,
 		Desc:          a.Desc,
@@ -36,11 +37,12 @@ func (a *Article) Add() error {
 		State:         a.State,
 		CoverImageUrl: a.CoverImageUrl,
 	}
-	return models.AddArticle2(&article)
+	return models.CreateArticle(article)
 }
 
-func (a *Article) Edit() error {
-	return models.EditArticle(a.ID, map[string]interface{}{
+// Update 更新文章
+func (a *Article) Update() error {
+	updates := map[string]interface{}{
 		"tag_id":          a.TagID,
 		"title":           a.Title,
 		"desc":            a.Desc,
@@ -48,9 +50,11 @@ func (a *Article) Edit() error {
 		"cover_image_url": a.CoverImageUrl,
 		"state":           a.State,
 		"modified_by":     a.ModifiedBy,
-	})
+	}
+	return models.UpdateArticle(a.ID, updates)
 }
 
+// Get 获取单个文章
 func (a *Article) Get() (*models.Article, error) {
 	var cacheArticle *models.Article
 
@@ -61,8 +65,10 @@ func (a *Article) Get() (*models.Article, error) {
 		if err != nil {
 			logging.Info(err)
 		} else {
-			json.Unmarshal(data, &cacheArticle)
-			return cacheArticle, nil
+			if err := json.Unmarshal(data, &cacheArticle); err == nil {
+				return cacheArticle, nil
+			}
+			logging.Error("json.Unmarshal failed:", err)
 		}
 	}
 
@@ -71,19 +77,21 @@ func (a *Article) Get() (*models.Article, error) {
 		return nil, err
 	}
 
-	gredis.Set(key, article, 3600)
+	if err := gredis.Set(key, article, 3600); err != nil {
+		logging.Error("gredis.Set failed:", err)
+	}
 	return article, nil
 }
 
+// GetAll 获取文章列表
 func (a *Article) GetAll() ([]*models.Article, error) {
 	var (
 		articles, cacheArticles []*models.Article
 	)
 
 	cache := cache_service.Article{
-		TagID: a.TagID,
-		State: a.State,
-
+		TagID:    a.TagID,
+		State:    a.State,
 		PageNum:  a.PageNum,
 		PageSize: a.PageSize,
 	}
@@ -93,45 +101,75 @@ func (a *Article) GetAll() ([]*models.Article, error) {
 		if err != nil {
 			logging.Info(err)
 		} else {
-			json.Unmarshal(data, &cacheArticles)
-			return cacheArticles, nil
+			if err := json.Unmarshal(data, &cacheArticles); err == nil {
+				return cacheArticles, nil
+			}
+			logging.Error("json.Unmarshal failed:", err)
 		}
 	}
 
-	articles, err := models.GetArticles(a.PageNum, a.PageSize, a.getMaps())
+	filter := a.getFilter()
+	articles, err := models.GetArticles(a.PageNum, a.PageSize, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	gredis.Set(key, articles, 3600)
+	if err := gredis.Set(key, articles, 3600); err != nil {
+		logging.Error("gredis.Set failed:", err)
+	}
 	return articles, nil
 }
 
+// Delete 删除文章
 func (a *Article) Delete() error {
-	return models.DeleteArticle(a.ID)
+	if err := models.DeleteArticle(a.ID); err != nil {
+		return err
+	}
+
+	// 删除缓存
+	cache := cache_service.Article{ID: a.ID}
+	key := cache.GetArticleKey()
+	if gredis.Exists(key) {
+		if _, err := gredis.Delete(key); err != nil {
+			logging.Error("delete cache failed:", err)
+		}
+	}
+	return nil
 }
 
+// ExistByID 检查文章是否存在
 func (a *Article) ExistByID() (bool, error) {
 	return models.ExistArticleByID(a.ID)
 }
 
+// Count 获取文章总数
 func (a *Article) Count() (int64, error) {
-	return models.GetArticleTotal(a.getMaps())
+	return models.GetArticleTotal(a.getFilter())
 }
 
-func (a *Article) getMaps() map[string]interface{} {
-	maps := make(map[string]interface{})
+// getFilter 获取查询过滤器
+func (a *Article) getFilter() models.ArticleFilter {
+	filter := models.ArticleFilter{
+		CreatedBy: a.CreatedBy,
+	}
+
 	if a.State != -1 {
-		maps["state"] = a.State
-	}
-	if a.TagID != 0 {
-		maps["tag_id"] = a.TagID
+		state := a.State
+		filter.State = &state
 	}
 
-	return maps
+	if a.TagID != 0 {
+		filter.TagID = &a.TagID
+	}
+
+	if a.Title != "" {
+		filter.Title = a.Title
+	}
+
+	return filter
 }
 
-// GetQrCodeUrl returns the QR code URL for the article
+// GetQrCodeUrl 获取文章二维码URL
 func (a *Article) GetQrCodeUrl() string {
 	return fmt.Sprintf("%s/api/v1/articles/%d", setting.AppSetting.PrefixUrl, a.ID)
 }

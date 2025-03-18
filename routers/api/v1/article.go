@@ -161,7 +161,7 @@ func AddArticle(c *gin.Context) {
 		State:         form.State,
 		CreatedBy:     form.CreatedBy,
 	}
-	if err := articleService.Add(); err != nil {
+	if err := articleService.Create(); err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_ADD_ARTICLE_FAIL, nil)
 		return
 	}
@@ -231,7 +231,7 @@ func EditArticle(c *gin.Context) {
 		return
 	}
 
-	err = articleService.Edit()
+	err = articleService.Update()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_EDIT_ARTICLE_FAIL, nil)
 		return

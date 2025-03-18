@@ -55,7 +55,8 @@ func (t *Tag) Delete() error {
 }
 
 func (t *Tag) Count() (int64, error) {
-	return models.GetTagTotal(t.getMaps())
+	filter := t.getFilter()
+	return models.GetTagTotal(filter)
 }
 
 func (t *Tag) GetAll() ([]models.Tag, error) {
@@ -64,8 +65,7 @@ func (t *Tag) GetAll() ([]models.Tag, error) {
 	)
 
 	cache := cache_service.Tag{
-		State: t.State,
-
+		State:    t.State,
 		PageNum:  t.PageNum,
 		PageSize: t.PageSize,
 	}
@@ -80,13 +80,32 @@ func (t *Tag) GetAll() ([]models.Tag, error) {
 		}
 	}
 
-	tags, err := models.GetTags(t.PageNum, t.PageSize, t.getMaps())
+	filter := t.getFilter()
+	tags, err := models.GetTags(t.PageNum, t.PageSize, filter)
 	if err != nil {
 		return nil, err
 	}
 
 	gredis.Set(key, tags, 3600)
 	return tags, nil
+}
+
+// getFilter 返回查询过滤条件
+func (t *Tag) getFilter() models.TagFilter {
+	filter := models.TagFilter{
+		Name: t.Name,
+	}
+	
+	if t.State >= 0 {
+		state := t.State
+		filter.State = &state
+	}
+	
+	if t.ID > 0 {
+		filter.IDs = []uint{t.ID}
+	}
+	
+	return filter
 }
 
 func (t *Tag) Export() (string, error) {
@@ -168,17 +187,4 @@ func (t *Tag) Import(r io.Reader) error {
 	}
 
 	return nil
-}
-
-func (t *Tag) getMaps() map[string]interface{} {
-	maps := make(map[string]interface{})
-
-	if t.Name != "" {
-		maps["name"] = t.Name
-	}
-	if t.State >= 0 {
-		maps["state"] = t.State
-	}
-
-	return maps
 }

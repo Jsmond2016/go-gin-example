@@ -1,5 +1,5 @@
 @baseUrl = http://127.0.0.1:8000
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2IiwicGFzc3dvcmQiOiJjYzAzZTc0N2E2YWZiYmNiZjhiZTc2NjhhY2ZlYmVlNSIsImlzcyI6Imdpbi1ibG9nIiwiZXhwIjoxNzM3NjIyNTE0LCJuYmYiOjE3Mzc2MTE3MTQsImlhdCI6MTczNzYxMTcxNH0.X2y83VYI6UO6LIQUHsWIODeDsQ3H3YLMLKpyU6uBbQ4
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2IiwicGFzc3dvcmQiOiJjYzAzZTc0N2E2YWZiYmNiZjhiZTc2NjhhY2ZlYmVlNSIsImlzcyI6Imdpbi1ibG9nIiwiZXhwIjoxNzQyMjk3NDE0LCJuYmYiOjE3NDIyODY2MTQsImlhdCI6MTc0MjI4NjYxNH0.REWulzpU4eZEe5ihTeUWnQCInwZHq1lT2GQaXDt8g2Y
 # @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2IiwicGFzc3dvcmQiOiJjYzAzZTc0N2E2YWZiYmNiZjhiZTc2NjhhY2ZlYmVlNSIsImlzcyI6Imdpbi1ibG9nIiwiZXhwIjoxNzM3NjIyOTI5LCJuYmYiOjE3Mzc2MTIxMjksImlhdCI6MTczNzYxMjEyOX0.SPIR5PvPLPnB_F2yi83V81ytv88nZEUfXA8VNUXWbFI
 
 ### Login
@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### 获取标签列表
-GET {{baseUrl}}/api/v1/tags
+GET {{baseUrl}}/api/v1/tags?name=123&state=1
 Authorization: {{token}}
 
 ### Add new tag
@@ -63,7 +63,7 @@ Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ### 获取文章列表
-GET {{baseUrl}}/api/v1/articles?state=1&tag_id=2
+GET {{baseUrl}}/api/v1/articles?state=1&tag_id=4
 Authorization: {{token}}
 
 ### 获取单个文章
@@ -76,8 +76,8 @@ Content-Type: application/json
 Authorization: {{token}}
 
 {
-    "tag_id": 2,
-    "title": "测试文章",
+    "tag_id": 3,
+    "title": "测试文章111",
     "desc": "这是一篇测试文章",
     "content": "文章内容",
     "created_by": "test",

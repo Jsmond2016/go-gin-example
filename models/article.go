@@ -1,5 +1,11 @@
 package models
 
+import (
+	"errors"
+	"gorm.io/gorm"
+)
+
+// Article 文章模型
 type Article struct {
 	Model
 
@@ -15,30 +21,47 @@ type Article struct {
 	State         int    `json:"state"`
 }
 
-// ExistArticleByID checks if an article exists based on ID
+// ArticleFilter 文章查询过滤器
+type ArticleFilter struct {
+	TagID     *uint
+	Title     string
+	State     *int
+	CreatedBy string
+}
+
+// ExistArticleByID 检查文章是否存在
 func ExistArticleByID(id uint) (bool, error) {
 	var article Article
 	err := db.Select("id").Where("id = ?", id).First(&article).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil
 }
 
-// GetArticleTotal gets the total number of articles based on the constraints
-func GetArticleTotal(maps interface{}) (int64, error) {
+// GetArticleTotal 获取文章总数
+func GetArticleTotal(filter ArticleFilter) (int64, error) {
 	var count int64
-	err := db.Model(&Article{}).Where(maps).Count(&count).Error
+	query := db.Model(&Article{})
+	
+	query = applyFilter(query, filter)
+	
+	err := query.Count(&count).Error
 	if err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-// GetArticles gets a list of articles based on paging constraints
-func GetArticles(pageNum int, pageSize int, maps interface{}) ([]*Article, error) {
+// GetArticles 获取文章列表
+func GetArticles(pageNum int, pageSize int, filter ArticleFilter) ([]*Article, error) {
 	var articles []*Article
-	query := db.Model(&Article{}).Preload("Tag").Where(maps)
+	query := db.Model(&Article{}).Preload("Tag")
+	
+	query = applyFilter(query, filter)
 
 	if pageSize > 0 && pageNum > 0 {
 		query = query.Offset((pageNum - 1) * pageSize).Limit(pageSize)
@@ -52,46 +75,78 @@ func GetArticles(pageNum int, pageSize int, maps interface{}) ([]*Article, error
 	return articles, nil
 }
 
-// GetArticle Get a single article based on ID
+// GetArticle 获取单个文章
 func GetArticle(id uint) (*Article, error) {
 	var article Article
 	err := db.Where("id = ?", id).Preload("Tag").First(&article).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("article not found")
+		}
 		return nil, err
 	}
 	return &article, nil
 }
 
-// EditArticle modify a single article
-func EditArticle(id uint, data interface{}) error {
-	return db.Model(&Article{}).Where("id = ?", id).Updates(data).Error
+// CreateArticle 创建文章
+func CreateArticle(article *Article) error {
+	return db.Create(article).Error
 }
 
-// AddArticle add a single article
-func AddArticle(data map[string]interface{}) error {
-	article := Article{
-		TagID:         data["tag_id"].(uint),
-		Title:         data["title"].(string),
-		Desc:          data["desc"].(string),
-		Content:       data["content"].(string),
-		CreatedBy:     data["created_by"].(string),
-		State:         data["state"].(int),
-		CoverImageUrl: data["cover_image_url"].(string),
+// CreateArticleTx 在事务中创建文章
+func CreateArticleTx(tx *gorm.DB, article *Article) error {
+	if tx == nil {
+		tx = db
 	}
-	return db.Create(&article).Error
+	return tx.Create(article).Error
 }
 
-// DeleteArticle delete a single article
+// UpdateArticle 更新文章
+func UpdateArticle(id uint, updates map[string]interface{}) error {
+	result := db.Model(&Article{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("article not found")
+	}
+	return nil
+}
+
+// DeleteArticle 删除文章
 func DeleteArticle(id uint) error {
-	return db.Where("id = ?", id).Delete(&Article{}).Error
+	result := db.Where("id = ?", id).Delete(&Article{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("article not found")
+	}
+	return nil
 }
 
-// CleanAllArticle clear all soft deleted articles
+// CleanAllArticle 清理所有软删除的文章
 func CleanAllArticle() error {
 	return db.Unscoped().Where("deleted_at IS NOT NULL").Delete(&Article{}).Error
 }
 
-// AddArticle2 添加文章（新方法，直接接收结构体）
-func AddArticle2(article *Article) error {
-	return db.Create(article).Error
+// applyFilter 应用查询过滤器
+func applyFilter(query *gorm.DB, filter ArticleFilter) *gorm.DB {
+	if filter.TagID != nil {
+		query = query.Where("tag_id = ?", *filter.TagID)
+	}
+	
+	if filter.Title != "" {
+		query = query.Where("title LIKE ?", "%"+filter.Title+"%")
+	}
+	
+	if filter.State != nil {
+		query = query.Where("state = ?", *filter.State)
+	}
+	
+	if filter.CreatedBy != "" {
+		query = query.Where("created_by = ?", filter.CreatedBy)
+	}
+	
+	return query
 }

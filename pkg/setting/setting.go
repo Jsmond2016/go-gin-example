@@ -46,6 +46,9 @@ type Database struct {
 	Host        string
 	Name        string
 	TablePrefix string
+	MaxIdleConns    int
+	MaxOpenConns    int
+	ConnMaxLifetime time.Duration
 }
 
 var DatabaseSetting = &Database{}
