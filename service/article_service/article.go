@@ -107,7 +107,7 @@ func (a *Article) GetAll() ([]*models.Article, error) {
 }
 
 // Create 创建文章
-func (a *Article) Create() error {
+func (a *Article) Create() (uint, error) {
 	article := &models.Article{
 		TagID:         a.TagID,
 		Title:         a.Title,
@@ -117,8 +117,10 @@ func (a *Article) Create() error {
 		State:         a.State,
 		CoverImageUrl: a.CoverImageUrl,
 	}
-	if err := models.CreateArticle(article); err != nil {
-		return err
+
+	articleID, err := models.CreateArticle(article)
+	if err != nil {
+		return 0, err
 	}
 
 	// 删除列表缓存
@@ -135,7 +137,7 @@ func (a *Article) Create() error {
 		}
 	}
 
-	return nil
+	return articleID, nil
 }
 
 // Update 更新文章

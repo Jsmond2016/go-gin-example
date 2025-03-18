@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -46,9 +47,9 @@ func ExistArticleByID(id uint) (bool, error) {
 func GetArticleTotal(filter ArticleFilter) (int64, error) {
 	var count int64
 	query := db.Model(&Article{})
-	
+
 	query = applyFilter(query, filter)
-	
+
 	err := query.Count(&count).Error
 	if err != nil {
 		return 0, err
@@ -60,9 +61,11 @@ func GetArticleTotal(filter ArticleFilter) (int64, error) {
 func GetArticles(pageNum int, pageSize int, filter ArticleFilter) ([]*Article, error) {
 	var articles []*Article
 	query := db.Model(&Article{}).Preload("Tag")
-	
-	query = applyFilter(query, filter)
 
+	query = applyFilter(query, filter)
+	// 按照创建时间排列，最新的在前面
+	// 先排序，再分页
+	query = query.Order("created_at DESC").Order("id DESC")
 	if pageSize > 0 && pageNum > 0 {
 		query = query.Offset((pageNum - 1) * pageSize).Limit(pageSize)
 	}
@@ -89,16 +92,22 @@ func GetArticle(id uint) (*Article, error) {
 }
 
 // CreateArticle 创建文章
-func CreateArticle(article *Article) error {
-	return db.Create(article).Error
+func CreateArticle(article *Article) (uint, error) {
+	if err := db.Create(article).Error; err != nil {
+		return 0, err
+	}
+	return article.ID, nil
 }
 
 // CreateArticleTx 在事务中创建文章
-func CreateArticleTx(tx *gorm.DB, article *Article) error {
+func CreateArticleTx(tx *gorm.DB, article *Article) (uint, error) {
 	if tx == nil {
 		tx = db
 	}
-	return tx.Create(article).Error
+	if err := tx.Create(article).Error; err != nil {
+		return 0, err
+	}
+	return article.ID, nil
 }
 
 // UpdateArticle 更新文章
@@ -135,18 +144,18 @@ func applyFilter(query *gorm.DB, filter ArticleFilter) *gorm.DB {
 	if filter.TagID != nil {
 		query = query.Where("tag_id = ?", *filter.TagID)
 	}
-	
+
 	if filter.Title != "" {
 		query = query.Where("title LIKE ?", "%"+filter.Title+"%")
 	}
-	
+
 	if filter.State != nil {
 		query = query.Where("state = ?", *filter.State)
 	}
-	
+
 	if filter.CreatedBy != "" {
 		query = query.Where("created_by = ?", filter.CreatedBy)
 	}
-	
+
 	return query
 }

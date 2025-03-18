@@ -161,12 +161,15 @@ func AddArticle(c *gin.Context) {
 		State:         form.State,
 		CreatedBy:     form.CreatedBy,
 	}
-	if err := articleService.Create(); err != nil {
+	articleID, err := articleService.Create()
+	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_ADD_ARTICLE_FAIL, nil)
 		return
 	}
 
-	appG.Response(http.StatusOK, e.SUCCESS, nil)
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]uint{
+		"id": articleID,
+	})
 }
 
 type EditArticleForm struct {
