@@ -1,56 +1,64 @@
 package util
 
 import (
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret []byte
+var (
+	ErrTokenExpired = errors.New("令牌已过期")
+	ErrTokenInvalid = errors.New("无效的令牌")
+)
 
+// Claims 自定义的 JWT 声明
 type Claims struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	jwt.RegisteredClaims
 }
 
-// GenerateToken generate tokens used for auth
+// GenerateToken 生成 JWT 令牌
 func GenerateToken(username, password string) (string, error) {
 	nowTime := time.Now()
-	expireTime := nowTime.Add(3 * time.Hour)
+	expireTime := nowTime.Add(config.JWT.ExpireDuration)
 
 	claims := Claims{
-		EncodeMD5(username),
-		EncodeMD5(password),
-		jwt.RegisteredClaims{
+		Username: EncodeMD5(username),
+		Password: EncodeMD5(password),
+		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime),
 			NotBefore: jwt.NewNumericDate(nowTime),
-			Issuer:    "gin-blog",
+			Issuer:    config.JWT.Issuer,
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(config.JWT.Secret)
 }
 
-// ParseToken parsing token
+// ParseToken 解析 JWT 令牌
 func ParseToken(token string) (*Claims, error) {
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrTokenInvalid
+		}
+		return config.JWT.Secret, nil
 	})
 
-	if err == jwt.ErrTokenExpired || err == jwt.ErrInvalidKey {
-		return nil, err
-	}
-
 	if err != nil {
-		return nil, err
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrTokenExpired
+		}
+		return nil, ErrTokenInvalid
 	}
 
-	if claims, ok := tokenClaims.Claims.(*Claims); ok && tokenClaims.Valid {
-		return claims, nil
+	claims, ok := tokenClaims.Claims.(*Claims)
+	if !ok || !tokenClaims.Valid {
+		return nil, ErrTokenInvalid
 	}
 
-	return nil, jwt.ErrInvalidKey
+	return claims, nil
 }

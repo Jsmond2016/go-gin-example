@@ -10,7 +10,6 @@ import (
 	"github.com/EDDYCJY/go-gin-example/pkg/e"
 	"github.com/EDDYCJY/go-gin-example/pkg/export"
 	"github.com/EDDYCJY/go-gin-example/pkg/logging"
-	"github.com/EDDYCJY/go-gin-example/pkg/setting"
 	"github.com/EDDYCJY/go-gin-example/pkg/util"
 	"github.com/EDDYCJY/go-gin-example/service/tag_service"
 )
@@ -30,11 +29,12 @@ func GetTags(c *gin.Context) {
 		state = com.StrTo(arg).MustInt()
 	}
 
+	pagination := util.GetPagination(c)
 	tagService := tag_service.Tag{
 		Name:     name,
 		State:    state,
-		PageNum:  util.GetPage(c),
-		PageSize: setting.AppSetting.PageSize,
+		PageNum:  pagination.Page,
+		PageSize: pagination.PageSize,
 	}
 	tags, err := tagService.GetAll()
 	if err != nil {

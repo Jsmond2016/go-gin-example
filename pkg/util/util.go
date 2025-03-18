@@ -1,8 +1,18 @@
 package util
 
-import "github.com/EDDYCJY/go-gin-example/pkg/setting"
+import (
+	"time"
 
-// Setup Initialize the util
+	"github.com/EDDYCJY/go-gin-example/pkg/setting"
+)
+
+// Setup 初始化工具包
 func Setup() {
-	jwtSecret = []byte(setting.AppSetting.JwtSecret)
+	config = Config{
+		JWT: JWTConfig{
+			Secret:         []byte(setting.AppSetting.JwtSecret),
+			ExpireDuration: 3 * time.Hour,
+			Issuer:        "gin-blog",
+		},
+	}
 }
