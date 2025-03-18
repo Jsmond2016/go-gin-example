@@ -278,3 +278,24 @@ func ImportTag(c *gin.Context) {
 
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
+
+// 添加批量删除接口
+func BatchDeleteTags(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		ids  []uint
+	)
+
+	if err := c.ShouldBindJSON(&ids); err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	tagService := tag_service.Tag{}
+	if err := tagService.BatchDelete(ids); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_TAG_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}

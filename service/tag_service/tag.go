@@ -262,3 +262,29 @@ func (t *Tag) Import(r io.Reader) error {
 
 	return nil
 }
+
+func (t *Tag) BatchDelete(ids []uint) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// 批量删除标签
+	if err := models.BatchEditTags(ids, map[string]interface{}{"deleted_at": time.Now()}); err != nil {
+		return err
+	}
+
+	// 删除缓存
+	cache := cache_service.Tag{
+		State:    t.State,
+		PageNum:  t.PageNum,
+		PageSize: t.PageSize,
+	}
+	key := cache.GetTagsKey()
+	if gredis.Exists(key) {
+		if _, err := gredis.Delete(key); err != nil {
+			t.BaseService.HandleCacheError(err, "删除标签缓存失败")
+		}
+	}
+
+	return nil
+}

@@ -129,14 +129,23 @@ type AddArticleForm struct {
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
 // @Router /api/v1/articles [post]
+// 将表单验证逻辑抽取为独立函数
+func validateArticleForm(c *gin.Context, form interface{}) (int, int, []string) {
+	httpCode, errCode, errs := app.BindAndValidWithErrors(c, form)
+	var errors []string
+	for _, err := range errs {
+		errors = append(errors, err)
+	}
+	return httpCode, errCode, errors
+}
+
 func AddArticle(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
 		form AddArticleForm
 	)
 
-	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &form)
-	if errCode != e.SUCCESS {
+	if httpCode, errCode, errors := validateArticleForm(c, &form); errCode != e.SUCCESS {
 		appG.Response(httpCode, errCode, errors)
 		return
 	}
