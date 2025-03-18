@@ -91,7 +91,8 @@ func (t *Tag) GetAll() ([]models.Tag, error) {
 	key := cache.GetTagsKey()
 
 	// 尝试从缓存获取
-	if gredis.Exists(key) {
+	// BUG: 先从里面取则为空，如何处理缓存？？？
+	if false && gredis.Exists(key) {
 		data, err := gredis.Get(key)
 		if err == nil {
 			if err := json.Unmarshal(data, &cacheTags); err == nil {

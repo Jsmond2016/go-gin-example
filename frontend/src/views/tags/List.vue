@@ -11,18 +11,10 @@
       <!-- 搜索区域 -->
       <el-form :inline="true" :model="searchForm" class="mb-4">
         <el-form-item label="名称">
-          <el-input
-            v-model="searchForm.name"
-            placeholder="标签名称"
-            clearable
-          />
+          <el-input v-model="searchForm.name" placeholder="标签名称" clearable />
         </el-form-item>
         <el-form-item label="状态" style="width: 260px">
-          <el-select
-            v-model="searchForm.state"
-            placeholder="选择状态"
-            clearable
-          >
+          <el-select v-model="searchForm.state" placeholder="选择状态" clearable>
             <el-option :value="1" label="启用" />
             <el-option :value="0" label="禁用" />
           </el-select>
@@ -56,11 +48,7 @@
               <el-button type="primary" :icon="Edit" @click="handleEdit(row)">
                 编辑
               </el-button>
-              <el-button
-                type="danger"
-                :icon="Delete"
-                @click="handleDelete(row)"
-              >
+              <el-button type="danger" :icon="Delete" @click="handleDelete(row)">
                 删除
               </el-button>
             </el-button-group>
@@ -70,38 +58,20 @@
 
       <!-- 分页 -->
       <div class="flex justify-end mt-4">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 30, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total="total"
+          :page-sizes="[10, 20, 30, 50]" layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
       </div>
     </el-card>
 
     <!-- 标签编辑对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="editingTag.id ? '编辑标签' : '新建标签'"
-      width="500px"
-    >
-      <el-form
-        ref="formRef"
-        :model="editingTag"
-        :rules="rules"
-        label-width="100px"
-      >
+    <el-dialog v-model="dialogVisible" :title="editingTag.id ? '编辑标签' : '新建标签'" width="500px">
+      <el-form ref="formRef" :model="editingTag" :rules="rules" label-width="100px">
         <el-form-item label="名称" prop="name">
           <el-input v-model="editingTag.name" placeholder="请输入标签名称" />
         </el-form-item>
         <el-form-item label="状态" prop="state" style="width: 260px;">
-          <el-select
-             v-model="editingTag.state"
-            placeholder="请选择状态"
-          >
+          <el-select v-model="editingTag.state" placeholder="请选择状态">
             <el-option :value="1" label="启用" />
             <el-option :value="0" label="禁用" />
           </el-select>
@@ -110,11 +80,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button
-            type="primary"
-            :loading="submitLoading"
-            @click="handleSubmit"
-          >
+          <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
             确定
           </el-button>
         </span>
@@ -231,7 +197,7 @@ const handleDelete = (row: Tag) => {
         ElMessage.error("删除失败")
       }
     })
-    .catch(() => {})
+    .catch(() => { })
 }
 
 // 提交表单
@@ -243,13 +209,23 @@ const handleSubmit = async () => {
 
     submitLoading.value = true
     try {
-      const api = editingTag.value.id ? tagApi.update : tagApi.create
-      const response = await api({
-        name: editingTag.value.name,
-        state: editingTag.value.state,
-        created_by: authStore.username || "",
-        // modified_by: authStore.username || "",
-      })
+      let response: any = {
+
+      }
+      if (editingTag.value.id) {
+        response = await tagApi.update(editingTag.value.id, {
+          name: editingTag.value.name,
+          state: editingTag.value.state,
+        })
+      } else {
+        response = await tagApi.create({
+          name: editingTag.value.name,
+          state: editingTag.value.state,
+          created_by: authStore.username || "",
+          // modified_by: authStore.username || "",
+        })
+      }
+
 
       if (response.code === 200) {
         ElMessage.success(editingTag.value.id ? "更新成功" : "创建成功")

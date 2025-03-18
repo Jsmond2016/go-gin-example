@@ -2,8 +2,10 @@ package util
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -61,4 +63,30 @@ func ParseToken(token string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+
+// getUsernameFromClaims 从 claims 中提取 username
+func GetUsernameFromClaims(c *gin.Context) (string, error) {
+	claims, exist := c.Get("claims")
+	if !exist {
+		return "", fmt.Errorf("claims not found")
+	}
+
+	claimsMap, ok := claims.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("invalid claims type")
+	}
+
+	username, usernameExists := claimsMap["username"]
+	if !usernameExists {
+		return "", fmt.Errorf("username not found in claims")
+	}
+
+	usernameStr, ok := username.(string)
+	if !ok {
+		return "", fmt.Errorf("invalid username type")
+	}
+
+	return usernameStr, nil
 }

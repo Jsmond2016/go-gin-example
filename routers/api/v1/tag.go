@@ -106,9 +106,9 @@ func AddTag(c *gin.Context) {
 }
 
 type EditTagForm struct {
-	ID         uint   `json:"id" binding:"required,min=1"`
+	// ID         uint   `json:"id" binding:"required,min=1"`
 	Name       string `json:"name" binding:"required,max=100"`
-	ModifiedBy string `json:"modified_by" binding:"required,max=100"`
+	// ModifiedBy string `json:"modified_by" binding:"required,max=100"`
 	State      int    `json:"state" binding:"required" validate:"required,is-valid-state"`
 }
 
@@ -137,7 +137,15 @@ func EditTag(c *gin.Context) {
 		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
-	form.ID = uint(idInt)
+ 
+
+	usernameStr,err := util.GetUsernameFromClaims(c)
+	if err != nil {
+			appG.Response(http.StatusInternalServerError, e.ERROR, nil)
+			return
+	}
+
+ 
 
 	httpCode, errCode, errors := app.BindAndValidWithErrors(c, &form)
 	if errCode != e.SUCCESS {
@@ -146,9 +154,11 @@ func EditTag(c *gin.Context) {
 	}
 
 	tagService := tag_service.Tag{
-		ID:         form.ID,
+		ID:         uint(idInt),
 		Name:       form.Name,
-		ModifiedBy: form.ModifiedBy,
+		// 从 token 中获取用户名字
+
+		ModifiedBy: usernameStr,
 		State:      form.State,
 	}
 

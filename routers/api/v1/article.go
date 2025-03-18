@@ -71,18 +71,19 @@ func GetArticles(c *gin.Context) {
 		}
 	}
 
-	var tagId int64 = -1
+	var tagId uint = 0
 	if arg := c.Query("tag_id"); arg != "" {
 		var err error
-		tagId, err = strconv.ParseInt(arg, 10, 64)
+		tagIdUint64, err := strconv.ParseUint(arg, 10, 64)
 		if err != nil {
 			appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 			return
 		}
-		if tagId < 1 {
+		if tagIdUint64 < 1 { // 检查是否小于 1
 			appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 			return
 		}
+		tagId = uint(tagIdUint64) // 显式类型转换为 uint
 	}
 
 	pagination := util.GetPagination(c)

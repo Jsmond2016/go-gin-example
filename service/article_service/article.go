@@ -81,7 +81,8 @@ func (a *Article) GetAll() ([]*models.Article, error) {
 	key := cache.GetArticlesKey()
 
 	// 尝试从缓存获取
-	if gredis.Exists(key) {
+	// BUG: 先从里面取则为空，如何处理缓存？？？
+	if false && gredis.Exists(key) {
 		data, err := gredis.Get(key)
 		if err == nil {
 			if err := json.Unmarshal(data, &cacheArticles); err == nil {
@@ -220,6 +221,7 @@ func (a *Article) getFilter() models.ArticleFilter {
 		state := a.State
 		filter.State = &state
 	}
+ 
 
 	if a.TagID != 0 {
 		filter.TagID = &a.TagID

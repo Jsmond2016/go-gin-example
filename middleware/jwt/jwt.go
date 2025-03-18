@@ -22,13 +22,15 @@ func JWT() gin.HandlerFunc {
 		if token == "" {
 			code = e.INVALID_PARAMS
 		} else {
-			_, err := util.ParseToken(token)
+			claims, err := util.ParseToken(token)
 			if err != nil {
 				if err.Error() == "Token is expired" {
 					code = e.ERROR_AUTH_CHECK_TOKEN_TIMEOUT
 				} else {
 					code = e.ERROR_AUTH_CHECK_TOKEN_FAIL
 				}
+			} else {
+				c.Set("claims", claims)
 			}
 		}
 
