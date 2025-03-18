@@ -7,7 +7,7 @@ import (
 
 	"github.com/EDDYCJY/go-gin-example/pkg/app"
 	"github.com/EDDYCJY/go-gin-example/pkg/e"
-	"github.com/EDDYCJY/go-gin-example/pkg/util"
+	"github.com/EDDYCJY/go-gin-example/pkg/jwt"
 	"github.com/EDDYCJY/go-gin-example/service/auth_service"
 )
 
@@ -45,7 +45,7 @@ func GetAuth(c *gin.Context) {
 		return
 	}
 
-	token, err := util.GenerateToken(a.Username, a.Password)
+	token, err := jwt.GenerateToken(a.Username)
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_AUTH_TOKEN, nil)
 		return

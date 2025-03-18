@@ -10,7 +10,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "github.com/EDDYCJY/go-gin-example/docs"
-	"github.com/EDDYCJY/go-gin-example/middleware/jwt"
+	"github.com/EDDYCJY/go-gin-example/pkg/middleware/jwt"
 	"github.com/EDDYCJY/go-gin-example/pkg/export"
 	"github.com/EDDYCJY/go-gin-example/pkg/qrcode"
 	"github.com/EDDYCJY/go-gin-example/pkg/upload"

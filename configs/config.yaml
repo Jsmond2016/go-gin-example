@@ -1,0 +1,16 @@
+server:
+  port: 8080
+  mode: debug
+  timeout: 60
+
+database:
+  driver: mysql
+  host: localhost
+  port: 3306
+  username: root
+  password: root
+  dbname: gin_example
+
+jwt:
+  secret: your-secret-key
+  expire_time: 86400

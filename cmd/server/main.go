@@ -26,6 +26,7 @@ func init() {
 	logging.Setup()
 	gredis.Setup()
 	util.Setup()
+	jwt.Setup(setting.AppSetting.JwtSecret)
 }
 
 // @title go-gin-example API
