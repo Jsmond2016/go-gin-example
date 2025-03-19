@@ -2,15 +2,19 @@ package routers
 
 import (
 	"net/http"
-	"time"
 
-	"github.com/gin-contrib/cors"
+	// "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "github.com/EDDYCJY/go-gin-example/docs"
+	"github.com/EDDYCJY/go-gin-example/middleware/cors"
 	"github.com/EDDYCJY/go-gin-example/middleware/jwt"
+	"github.com/EDDYCJY/go-gin-example/middleware/logger"
+	"github.com/EDDYCJY/go-gin-example/middleware/permission"
+	"github.com/EDDYCJY/go-gin-example/middleware/ratelimit"
+	"github.com/EDDYCJY/go-gin-example/middleware/recovery"
 	"github.com/EDDYCJY/go-gin-example/pkg/export"
 	"github.com/EDDYCJY/go-gin-example/pkg/qrcode"
 	"github.com/EDDYCJY/go-gin-example/pkg/upload"
@@ -20,22 +24,29 @@ import (
 
 // InitRouter initialize routing information
 // 将 CORS 配置抽取为独立函数
-func corsConfig() cors.Config {
-	return cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}
-}
+// func corsConfig() cors.Config {
+// 	return cors.Config{
+// 		AllowOrigins:     []string{"http://localhost:3000"},
+// 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+// 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+// 		ExposeHeaders:    []string{"Content-Length"},
+// 		AllowCredentials: true,
+// 		MaxAge:           12 * time.Hour,
+// 	}
+// }
 
 func InitRouter() *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
-	r.Use(cors.New(corsConfig()))
+
+	// 基础中间件
+	r.Use(recovery.Recovery()) // panic 恢复
+	r.Use(logger.Logger())     // 请求日志
+	r.Use(gin.Logger())        // Request time logging
+	r.Use(cors.Cors())         // CORS 跨域
+
+	// 限流中间件（每分钟允许100个请求，突发200个）
+	rateLimiter := ratelimit.NewRateLimiter(100, 200)
+	r.Use(rateLimiter.RateLimit())
 
 	r.StaticFS("/export", http.Dir(export.GetExcelFullPath()))
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
@@ -43,12 +54,11 @@ func InitRouter() *gin.Engine {
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.POST("/upload", api.UploadImage)
-
-	// 将 auth 接口移到 JWT 中间件之外
 	r.POST("/api/v1/auth", api.GetAuth)
 
 	apiv1 := r.Group("/api/v1")
-	apiv1.Use(jwt.JWT())
+	apiv1.Use(jwt.JWT())                    // JWT 认证
+	apiv1.Use(permission.CheckPermission()) // 权限检查
 	{
 		// Tags
 		apiv1.GET("/tags", v1.GetTags)
